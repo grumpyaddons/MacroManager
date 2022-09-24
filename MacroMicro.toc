@@ -1,0 +1,11 @@
+## Interface: 90207
+## Title: MacroMicro
+## Notes: Some notes about this addon.
+## Author: Your Name Here
+## Version: 0.1
+
+embeds.xml
+
+Core.lua
+Transmission.lua
+AceGUIWidget-SecureActionButton.lua
