@@ -54,13 +54,19 @@ local macroTypeRadioButtons = {};
 macroTypeRadioButtons.characterMacroRadioButton = nil;
 macroTypeRadioButtons.accountMacroRadioButton = nil;
 
-function SetMacroTypeRadioButtons(macroIndex)
-    if macroIndex == nil or macroIndex == -1 then
-        macroTypeRadioButtons.accountMacroRadioButton:SetValue(false)
-        macroTypeRadioButtons.characterMacroRadioButton:SetValue(true)
+function SetMacroTypeRadioButtons(macroIndexOrType)
+    if macroIndexOrType == nil or macroIndexOrType == -1 then
+        macroTypeRadioButtons.accountMacroRadioButton:SetValue(false);
+        macroTypeRadioButtons.characterMacroRadioButton:SetValue(true);
+    elseif macroIndexOrType == "account" then
+        macroTypeRadioButtons.accountMacroRadioButton:SetValue(true);
+        macroTypeRadioButtons.characterMacroRadioButton:SetValue(false);
+    elseif macroIndexOrType == "character" then
+        macroTypeRadioButtons.accountMacroRadioButton:SetValue(false);
+        macroTypeRadioButtons.characterMacroRadioButton:SetValue(true);
     else
-        macroTypeRadioButtons.accountMacroRadioButton:SetValue(macroIndex < 121)
-        macroTypeRadioButtons.characterMacroRadioButton:SetValue(macroIndex >= 121)
+        macroTypeRadioButtons.accountMacroRadioButton:SetValue(macroIndexOrType < 121)
+        macroTypeRadioButtons.characterMacroRadioButton:SetValue(macroIndexOrType >= 121)
     end
 end
 
@@ -86,9 +92,8 @@ StaticPopupDialogs["DELETE_MACRO"] = {
     button2 = "Cancel",
     OnAccept = function(self, macroId)
         DeleteMacro(self.macroId);
-        frame:Release();
-        frame = nil;
-        Show_Options();
+        ShowMacroMicro();
+        RefreshMacroFormBasedonSelectedTreeItem();
     end,
     timeout = 0,
     whileDead = true,
@@ -113,19 +118,7 @@ function Private.OpenSharedMacroWithData(data)
     Private.OpenSharedMacro(sharedMacroLabel, data);
 end
 
-function ResetSelectedMacro()
-    -- Reset selected macro
-    if selectedMacroLabel ~= nil then
-        selectedMacroLabel:SetHighlight("Interface\\Buttons\\UI-Listbox-Highlight2");
-        selectedMacroTexture:SetTexture(nil);
-    end
-    selectedMacroLabel = nil;
-    selectedMacroId = nil;
-end
-
 function Private.OpenSharedMacro(label, data)
-    ResetSelectedMacro();
-
     local macroName, macroTexture, macroBody = "", "INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK", ""
     if data then
         macroName = data.macroName
@@ -141,145 +134,10 @@ function Private.OpenSharedMacro(label, data)
     SetMacroTypeRadioButtons();
 end
 
-function Print_Macros(macroIcon, macroNameEditBox, macroBodyEditBox)
-    local scrollContainer = AceGUI:Create("InlineGroup") -- "InlineGroup" is also good
-    scrollContainer:SetTitle("Macros");
-    scrollContainer:SetWidth(200);
-    scrollContainer:SetFullHeight(true); -- probably?
-    scrollContainer:SetLayout("Fill") -- important!
-        
-    -- ... add your widgets to "scroll"
-    local scroll = AceGUI:Create("ScrollFrame")
-    scroll:SetLayout("List") -- probably?
-    scroll:SetStatusTable(scrollStatusTable);
-    scrollContainer:AddChild(scroll)
-    
-    local newButton = AceGUI:Create("Button");
-    newButton:SetText("New Macro");
-    --newButton:SetWidth(100);
-    newButton:SetRelativeWidth(1);
-    newButton:SetCallback("OnClick", function()
-        Private.OpenSharedMacro(self, nil);
-    end);
-    
-    local accountMacroList = AceGUI:Create("SimpleGroup");
-    accountMacroList:AddChild(CreateMacroHeaderLabel("Account Macros"));
-
-    local characterMacroList = AceGUI:Create("SimpleGroup");
-    characterMacroList:AddChild(CreateMacroHeaderLabel("Character Macros"));
-
-    if selectedMacroTexture == nil then 
-        selectedMacroTexture = accountMacroList.frame:CreateTexture(nil, "BACKGROUND");
-        selectedMacroTexture:SetBlendMode("ADD");
-        selectedMacroTexture:SetTexture("Interface\\Buttons\\UI-Listbox-Highlight2");
-    end
-
-    local accountMacroCount, characterMacroCount = GetNumMacros();
-
-    if accountMacroCount == 0 then
-        local noneAccountLabel = AceGUI:Create("Label");
-        noneAccountLabel:SetFullWidth(true);
-        noneAccountLabel:SetText("   None");
-        noneAccountLabel:SetFontObject(GameFontHighlight);
-        accountMacroList:AddChild(noneAccountLabel);
-    end
-
-    if characterMacroCount == 0 then
-        local noneCharacterLabel = AceGUI:Create("Label");
-        noneCharacterLabel:SetFullWidth(true);
-        noneCharacterLabel:SetText("  None");
-        noneCharacterLabel:SetFontObject(GameFontHighlight);
-        characterMacroList:AddChild(noneCharacterLabel);
-    end
-
-    local maxMacroButtons = 138;
-    for i=1, maxMacroButtons do
-        name, texture, body = GetMacroInfo(i);
-        
-        if name ~= nil then
-            local label = AceGUI:Create("InteractiveLabel");
-            label:SetImage(texture);
-            label:SetFullWidth(true);
-            label:SetText(name);
-            label:SetHighlight("Interface\\Buttons\\UI-Listbox-Highlight2");
-            label:SetUserData("macroId", i);
-
-            if selectedMacroId == i then
-                selectedMacroLabel = label;
-                selectedMacroTexture:SetAllPoints(label.frame);
-            end
-
-            label:SetCallback("OnClick", function(self)
-                selectedMacroTexture:SetTexture("Interface\\Buttons\\UI-Listbox-Highlight2");
-                if (IsShiftKeyDown()) then
-                    local name, texture, body = GetMacroInfo(self.userdata["macroId"]);
-                
-                    local editbox = GetCurrentKeyBoardFocus();
-                    local fullName;
-                    if(editbox) then
-                        if (not fullName) then
-                        local name, realm = UnitFullName("player")
-                        if realm then
-                            fullName = name.."-".. realm
-                        else
-                            fullName = name
-                        end
-                        end
-                        
-                        editbox:Insert("[MacroMicro: "..fullName.." - "..name.."]");
-                        Private.linked = Private.linked or {}
-                        Private.linked[name] = GetTime()
-                    end
-                else
-                    -- Allow highlighting of the previously selected label
-                    if selectedMacroLabel ~= nil then
-                        selectedMacroLabel:SetHighlight("Interface\\Buttons\\UI-Listbox-Highlight2");
-                    end
-                    selectedMacroLabel = self;
-                    local macroName, icon, body = GetMacroInfo(i);
-                    macroIcon:SetImage(icon);
-                    macroBodyEditBox:SetText(body);
-                    macroBodyEditBox:Fire("OnTextChanged");
-                    macroNameEditBox:SetText(macroName);
-                    macroNameEditBox:Fire("OnTextChanged");
-                    selectedMacroId = i;
-
-                    SetMacroTypeRadioButtons(i)
-                    
-                    selectedMacroLabel:SetHighlight("");
-                    selectedMacroTexture:SetAllPoints(self.frame);
-                end
-            end);
-            
-            -- Macro slot index to query. Slots 1 through 120 are general macros; 121 through 138 are per-character macros.
-            if i < 121 then
-                accountMacroList:AddChild(label);
-            else
-                characterMacroList:AddChild(label);
-            end
-        end
-    end
-
-    local separator = AceGUI:Create("Label");
-    separator:SetText(" ");
-    local separatorTexture = separator.frame:CreateTexture(nil, "BACKGROUND");
-    
-    separatorTexture:SetBlendMode("BLEND");
-    separatorTexture:SetTexture("Interface/BUTTONS/WHITE8X8");
-
-    scroll:AddChild(newButton);
-    scroll:AddChild(CreateSeparatorLabel());
-    scroll:AddChild(characterMacroList);
-    scroll:AddChild(CreateSeparatorLabel());
-    scroll:AddChild(accountMacroList);
-    scroll:AddChild(CreateSeparatorLabel());
-    return scrollContainer;
-end
-
 local tree = { 
     {
         value = "new",
-        text = "New Macro"
+        text = "+ New Macro"
     },
     {
       value = "character",
@@ -294,6 +152,30 @@ local tree = {
       children = {}
     },
   };
+
+function GetSelectedMacroTypeAndId()
+    -- Couldn't figure out how to get the actual value selected.
+    -- Looked into the source code of TreeGroup and it delimits paths
+    -- with "\001", so we can split on that and get the last value to
+    -- get the macro index.
+    if macroTreeStatusTable and macroTreeStatusTable.selected then
+        if macroTreeStatusTable.selected == "new" then
+            return "new";
+        end
+        local macroType, macroIndexString = ("\001"):split(macroTreeStatusTable.selected);
+
+        return macroType, tonumber(macroIndexString);
+    end
+
+    return nil, nil;
+end
+
+
+function CreateSeparatorLabel()
+    local label = AceGUI:Create("Label");
+    label:SetText(" ");
+    return label;
+end
 
 function CreateSeparatorLabel()
     local label = AceGUI:Create("Label");
@@ -324,38 +206,60 @@ function GenerateMacroTree()
     return characterMacros, accountMacros;
 end
 
-function Show_Options()
-    if selectedMacroId == nil then
-        selectedMacroId = 1;
+function RefreshMacroFormBasedonSelectedTreeItem()
+    local macroType, macroIndex = GetSelectedMacroTypeAndId();
+    if macroType == "new" then
+        RefreshMacroForm();
+        return
     end
+    
+    local macroName, icon, macroBody = GetMacroInfo(macroIndex);
+    RefreshMacroForm(macroIndex, macroName, icon, macroBody);
+end
+
+function RefreshMacroForm(macroType, macroName, icon, macroBody)
+    if icon then
+        macroIcon:SetImage(icon);
+    end
+    if macroBody then
+        macroBodyEditBox:SetText(macroBody);
+        macroBodyEditBox:Fire("OnTextChanged");
+    end
+    macroNameEditBox:SetText(macroName);
+    macroNameEditBox:Fire("OnTextChanged");
+    SetMacroTypeRadioButtons(macroType);
+end
+
+function Show_Options()
     frame = AceGUI:Create("Window");
     frame:SetStatusTable(fameStatusTable);
     -- Setting the frame to high as it was above the delete macro dialog box
     frame.frame:SetFrameStrata("HIGH");
     frame:SetTitle("MacroMicro");
     frame:SetCallback("OnClose", function(widget) AceGUI:Release(widget) end);
-    frame:SetLayout("Flow");
+    frame:SetLayout("Fill");
 
-    -- local treeGroup = AceGUI:Create("TreeGroup");
-    -- treeGroup:SetTree(tree);
-    -- local treeGroupStatusTable = {};
-    -- treeGroupStatusTable.scrollvalue = 0;
-    -- treeGroup:SetStatusTable(treeGroupStatusTable);
-    -- frame:AddChild(treeGroup);
-    -- DevTools_Dump(treeGroup);
+    -- Close on escape taken from https://stackoverflow.com/a/61215014
+    -- Add the frame as a global variable under the name `MyGlobalFrameName`
+    _G["MacroMicroFrame"] = frame.frame
+    -- Register the global variable `MyGlobalFrameName` as a "special frame"
+    -- so that it is closed when the escape key is pressed.
+    tinsert(UISpecialFrames, "MacroMicroFrame")
 
     local macroTreeContainer = AceGUI:Create("SimpleGroup");
-    macroTreeContainer:SetLayout("Fill")
+    macroTreeContainer:SetLayout("Fill");
     macroTreeContainer:SetFullHeight(true); -- probably?
     frame:AddChild(macroTreeContainer)
 
     macroTree = AceGUI:Create("TreeGroup");
     macroTree:SetLayout("Flow");
-
+    
     -- Expand groups by default
-    macroTreeStatusTable.groups = macroTreeStatusTable.groups or {};
-    macroTreeStatusTable.groups["character"] = true;
-    macroTreeStatusTable.groups["account"] = true;
+    if not macroTreeStatusTable.groups then
+        macroTreeStatusTable.groups = {};
+        macroTreeStatusTable.groups["character"] = true;
+        macroTreeStatusTable.groups["account"] = true;
+    end
     macroTree:SetStatusTable(macroTreeStatusTable);
     
     local characterMacros, accountMacros = GenerateMacroTree();
@@ -363,22 +267,15 @@ function Show_Options()
     tree[3].children = accountMacros;
     macroTree:SetTree(tree);
     macroTree:SetFullWidth(true);
-    macroTree:SelectByValue(selectedMacroId);
+    if not macroTreeStatusTable.selected then
+        macroTree:SelectByValue("new");
+    end
     macroTree:SetCallback("OnGroupSelected", function(self)
-        print("OnGroupSelected");
-        -- Couldn't figure out how to get the actual value selected.
-        -- Looked into the source code of TreeGroup and it delimits paths
-        -- with "\001", so we can split on that and get the last value to
-        -- get the macro index.
-        local macroType, macroIndexString = ("\001"):split(macroTreeStatusTable.selected);
+        local macroType, macroIndex = GetSelectedMacroTypeAndId();
         if macroType == "new" then
             Private.OpenSharedMacro(self, nil);
             return
         end
-        
-        print(macroType);
-        print(macroIndexString);
-        local macroIndex = tonumber(macroIndexString);
         
         local macroName, icon, macroBody = GetMacroInfo(macroIndex);
         if (IsShiftKeyDown()) then
@@ -399,16 +296,7 @@ function Show_Options()
                 Private.linked[macroName] = GetTime()
             end
         else
-            macroIcon:SetImage(icon);
-            if macroBody then
-                macroBodyEditBox:SetText(macroBody);
-                macroBodyEditBox:Fire("OnTextChanged");
-            end
-            macroNameEditBox:SetText(macroName);
-            macroNameEditBox:Fire("OnTextChanged");
-            selectedMacroId = macroIndex;
-
-            SetMacroTypeRadioButtons(macroIndex);
+            RefreshMacroForm(macroIndex, macroName, icon, macroBody);
         end
     end);
 
@@ -418,18 +306,17 @@ function Show_Options()
         Private.OpenSharedMacro(self, nil);
     end);
 
-    --macroTreeContainer:AddChild(newButton);
     macroTreeContainer:SetFullWidth(true);
     macroTreeContainer:AddChild(macroTree);
     
     
-    -- If we got a nil value for index, that means the macro doesn't exist.
-    -- This might happen if you delete the bottom most macro.
-    local macroName, macroTexture, macroBody = GetMacroInfo(selectedMacroId);
-    if macroName == nil then
-        selectedMacroId = 1;
-    end
-    local macroName, macroTexture, macroBody = GetMacroInfo(selectedMacroId);
+    -- -- If we got a nil value for name, that means the macro doesn't exist.
+    -- -- This might happen if you delete the bottom most macro.
+    -- local macroName, macroTexture, macroBody = GetMacroInfo(selectedMacroId);
+    -- if macroName == nil then
+    --     selectedMacroId = 1;
+    -- end
+    -- local macroName, macroTexture, macroBody = GetMacroInfo(selectedMacroId);
 
 
     local macroTypeGroup = AceGUI:Create("SimpleGroup");
@@ -449,7 +336,7 @@ function Show_Options()
         macroTypeRadioButtons.characterMacroRadioButton:SetValue(not self:GetValue())
     end)
 
-    SetMacroTypeRadioButtons(selectedMacroId)
+    --SetMacroTypeRadioButtons(selectedMacroId)
 
     macroTypeGroup:AddChild(macroTypeRadioButtons.characterMacroRadioButton);
     macroTypeGroup:AddChild(macroTypeRadioButtons.accountMacroRadioButton);
@@ -462,10 +349,10 @@ function Show_Options()
     macroNameEditBox:SetCallback("OnTextChanged", function(self)
         self:SetLabel("Macro Name ("..string.len(macroNameEditBox:GetText()).."/16)");
     end);
-    if macroName ~= nil then
-        macroNameEditBox:SetText(macroName);
-        macroNameEditBox:SetLabel("Macro Name ("..string.len(macroNameEditBox:GetText()).."/16)");
-    end
+    -- if macroName ~= nil then
+    --     macroNameEditBox:SetText(macroName);
+    --     macroNameEditBox:SetLabel("Macro Name ("..string.len(macroNameEditBox:GetText()).."/16)");
+    -- end
 
     macroBodyEditBox = AceGUI:Create("MultiLineEditBox");
     macroBodyEditBox:SetLabel("Macro Body (0/255)");
@@ -473,23 +360,27 @@ function Show_Options()
     macroBodyEditBox:DisableButton(true);
     macroBodyEditBox:SetMaxLetters(255);
     macroBodyEditBox:SetNumLines(10);
+    macroBodyEditBox.editBox:SetCountInvisibleLetters(true);
     macroBodyEditBox:SetCallback("OnTextChanged", function(self)
         self:SetLabel("Macro Body ("..string.len(macroBodyEditBox:GetText()).."/255)");
     end);
-    if macroName ~= nil then
-        macroBodyEditBox:SetText(macroBody);
-        macroBodyEditBox:Fire("OnTextChanged");
-    end
+    -- if macroName ~= nil then
+    --     macroBodyEditBox:SetText(macroBody);
+    --     macroBodyEditBox:Fire("OnTextChanged");
+    -- end
 
     macroIcon = AceGUI:Create("Icon");
     macroIcon:SetImage("INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK");
     macroIcon:SetImageSize(24, 24);
     macroIcon:SetCallback("OnClick", function(self)
-        PickupMacro(selectedMacroId);
+        local macroType, macroIndex = GetSelectedMacroTypeAndId();
+        if macroType ~= "new" then
+            PickupMacro(macroType);
+        end;
     end);
-    if macroTexture ~= nil then
-        macroIcon:SetImage(macroTexture);
-    end
+    -- if macroTexture ~= nil then
+    --     macroIcon:SetImage(macroTexture);
+    -- end
 
     local saveButton = AceGUI:Create("Button");
     saveButton:SetText("Save");
@@ -497,32 +388,38 @@ function Show_Options()
     saveButton:SetCallback("OnClick", function()
         local newName = macroNameEditBox:GetText();
         local newBody = macroBodyEditBox:GetText();
-        local macroType = GetMacroTypeSelected()
-        if selectedMacroId then
-            local _, currentIcon, _ = GetMacroInfo(selectedMacroId);
+        local selectedMacroType, selectedMacroIndex = GetSelectedMacroTypeAndId();
+        local editorMacroType = GetMacroTypeSelected();
+        if selectedMacroType == "new" then
+            local isCharacterMacro = editorMacroType == "character";
+            -- 134400 is the question mark icon
+            local newMacroId = CreateMacro(newName, 134400, newBody, isCharacterMacro);
+            ShowMacroMicro();
+
+            local path = editorMacroType .. "\001" .. newMacroId;
+            macroTree:SelectByValue(path);
+        else
+            local _, currentIcon, _ = GetMacroInfo(selectedMacroIndex);
+            local newMacroId;
             -- Was the macro type changed from account to character or vice versa?
-            if macroType == MacroTypeBasedOnIndex(selectedMacroId) then
+            if editorMacroType == MacroTypeBasedOnIndex(selectedMacroIndex) then
                 -- Macro type hasn't changed, just do an edit macro
-                EditMacro(selectedMacroId, newName, currentIcon, newBody);
-                ShowMacroMicro();
+                newMacroId = EditMacro(selectedMacroIndex, newName, currentIcon, newBody);
             else
                 -- Macro type changed, delete and add new macro
-                DeleteMacro(selectedMacroId);
-                local isCharacterMacro = macroType == "character";
-                selectedMacroId = CreateMacro(newName, currentIcon, newBody, isCharacterMacro);
-                ShowMacroMicro();
-
-                local path = macroType .. "\001" .. selectedMacroId;
-                macroTree:SelectByPath(path);
+                DeleteMacro(selectedMacroIndex);
+                local isCharacterMacro = editorMacroType == "character";
+                newMacroId = CreateMacro(newName, currentIcon, newBody, isCharacterMacro);
             end
-        else
-            local isCharacterMacro = macroType == "character";
-            -- 134400 is the question mark icon
-            selectedMacroId = CreateMacro(newName, 134400, newBody, isCharacterMacro);
+
             ShowMacroMicro();
-            
-            local path = macroType .. "\001" .. selectedMacroId;
-            macroTree:SelectByValue(path);
+            local newMacroType = "account";
+            if newMacroId >= 121 then
+                newMacroType = "character";
+            end
+            local path = newMacroType .. "\001" .. newMacroId;
+            macroTree:SelectByPath(path);
+            RefreshMacroFormBasedonSelectedTreeItem();
         end
     end);
 
@@ -530,10 +427,11 @@ function Show_Options()
     deleteButton:SetText("Delete");
     deleteButton:SetWidth(100);
     deleteButton:SetCallback("OnClick", function()
-        local currentMacroName, _, _ = GetMacroInfo(selectedMacroId);
+        local selectedMacroType, selectedMacroIndex = GetSelectedMacroTypeAndId()
+        local currentMacroName, _, _ = GetMacroInfo(selectedMacroIndex);
         local dialog = StaticPopup_Show("DELETE_MACRO", currentMacroName);
         if (dialog) then
-            dialog.macroId = selectedMacroId;
+            dialog.macroId = selectedMacroIndex;
         end
     end)
 
@@ -541,7 +439,8 @@ function Show_Options()
     shareButton:SetText("Share");
     shareButton:SetWidth(100);
     shareButton:SetCallback("OnClick", function()
-        local name, texture, body = GetMacroInfo(selectedMacroId);
+        local selectedMacroType, selectedMacroIndex = GetSelectedMacroTypeAndId()
+        local name, texture, body = GetMacroInfo(selectedMacroIndex);
         local message = "|Hitem:myAddonName:value1:value2|h[Click here!]|h";
     
         local editbox = GetCurrentKeyBoardFocus();
@@ -568,6 +467,13 @@ function Show_Options()
     macroTree:AddChild(macroBodyEditBox);
     macroTree:AddChild(saveButton);
     macroTree:AddChild(deleteButton);
+
+    local shareInfoLabel = AceGUI:Create("Label");
+    shareInfoLabel:SetFullWidth(true);
+    shareInfoLabel:SetText("To share a macro, shift-click it in the left menu while your chat box is open. Similar to how WeakAuras are shared.");
+    macroTree:AddChild(CreateSeparatorLabel());
+    macroTree:AddChild(CreateSeparatorLabel());
+    macroTree:AddChild(shareInfoLabel);
 end 
 
 
