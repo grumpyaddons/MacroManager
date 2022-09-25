@@ -2,30 +2,7 @@ local AddonName, Private = ...
 
 local AceGUI = LibStub("AceGUI-3.0");
 
-local AddonObject = LibStub("AceAddon-3.0"):NewAddon("MacroMicro", "AceConsole-3.0");
 
-MacroMicro = {}
-
-function MacroMicro.IsRetail()
-    -- Hard coded for now. Used by SpellCache
-    return false;
-end
-
-function AddonObject:OnInitialize()
-    -- Code that you want to run when the addon is first loaded goes here.
-  end
-
-function AddonObject:OnEnable()
-    MacroMicroSaved = MacroMicroSaved or {};
-    MacroMicroSaved.spellCache = MacroMicroSaved.spellCache or {};
-    MacroMicroSaved.dynamicIconCache = MacroMicroSaved.dynamicIconCache or {};
-
-    MacroMicro.spellCache.Load(MacroMicroSaved);
-end
-
-function AddonObject:OnDisable()
-    -- Called when the addon is disabled
-end
 
 
 local Predictor = {}
@@ -49,12 +26,8 @@ local scrollStatusTable = {
     offset = 0
 };
 
-local scrollStatusTable = {
-    scrollvalue = 0,
-    offset = 0
-};
-
-local fameStatusTable = {};
+local frameStatusTable = {};
+local iconPickerFrameStatusTable = {};
 
 local macroTree = nil;
 local macroTreeStatusTable = {};
@@ -261,17 +234,26 @@ end
 
 function Show_Options()
     frame = AceGUI:Create("Window");
-    frame:SetStatusTable(fameStatusTable);
+    -- Couldn't figure out how to set the default height/width
+    frameStatusTable.height = frameStatusTable.height or 600;
+    frameStatusTable.width = frameStatusTable.width or 500;
+    frame:SetStatusTable(frameStatusTable);
     -- Setting the frame to high as it was above the delete macro dialog box
     frame.frame:SetFrameStrata("HIGH");
     frame:SetTitle("MacroMicro");
-    frame:SetCallback("OnClose", function(widget) AceGUI:Release(widget) end);
+    frame:SetCallback("OnClose", function(widget) 
+        iconPickerParent:Hide();
+        AceGUI:Release(widget) 
+    end);
     frame:SetLayout("Fill");
     
 
     iconPickerParent = iconPickerParent or AceGUI:Create("Window");
+    iconPickerFrameStatusTable.height = iconPickerFrameStatusTable.height or 600;
+    iconPickerFrameStatusTable.width = iconPickerFrameStatusTable.width or 500;
+    iconPickerParent:SetStatusTable(iconPickerFrameStatusTable);
     iconPickerParent:SetLayout("Fill");
-    iconPickerParent.iconPicker = Private.IconPicker(frame.frame);
+    iconPickerParent.iconPicker = Private.IconPicker(iconPickerParent);
     iconPickerParent:Hide();
 
     -- Close on escape taken from https://stackoverflow.com/a/61215014
@@ -284,6 +266,7 @@ function Show_Options()
     tinsert(UISpecialFrames, "MacroMicroIconPickerFrame")
 
     local macroTreeContainer = AceGUI:Create("SimpleGroup");
+    macroTreeContainer:SetWidth(500);
     macroTreeContainer:SetLayout("Fill");
     macroTreeContainer:SetFullHeight(true); -- probably?
     frame:AddChild(macroTreeContainer)
@@ -307,13 +290,6 @@ function Show_Options()
     if not macroTreeStatusTable.selected then
         macroTree:SelectByValue("new");
     end
-
-    local newButton = AceGUI:Create("Button");
-    newButton:SetText("New Macro");
-    newButton:SetCallback("OnClick", function()
-        Private.OpenSharedMacro(self, nil);
-    end);
-
     macroTreeContainer:SetFullWidth(true);
     macroTreeContainer:AddChild(macroTree);
 
@@ -379,12 +355,13 @@ function Show_Options()
     changeIconButton:SetText("Change");
     changeIconButton:SetWidth(100);
     changeIconButton:SetCallback("OnClick", function()
-        -- iconPickerParent.iconPicker.frame:SetFrameStrata("HIGH");
-        -- iconPickerParent.iconPicker.frame:Raise();
         iconPickerParent:AddChild(iconPickerParent.iconPicker);
         iconPickerParent.iconPicker:Open(baseObject, paths, groupIcon, function(pickedIcon)
             macroIcon:SetImage(pickedIcon);
         end);
+        iconPickerParent.frame:ClearAllPoints();
+        iconPickerParent.frame:SetPoint("TOP", frame.frame, "TOP");
+        iconPickerParent.frame:SetPoint("LEFT", frame.frame, "RIGHT");
         iconPickerParent:Show();
     end);
 
@@ -531,82 +508,3 @@ function ShowMacroMicro()
     Show_Options();
 end
 
--- Handle coroutines
-local dynFrame = {};
-do
-  -- Internal data
-  dynFrame.frame = CreateFrame("Frame");
-  dynFrame.update = {};
-  dynFrame.size = 0;
-
-  -- Add an action to be resumed via OnUpdate
-  function dynFrame.AddAction(self, name, func)
-    if not name then
-      name = string.format("NIL", dynFrame.size+1);
-    end
-
-    if not dynFrame.update[name] then
-      dynFrame.update[name] = func;
-      dynFrame.size = dynFrame.size + 1
-      dynFrame.frame:Show();
-    end
-  end
-
-  -- Remove an action from OnUpdate
-  function dynFrame.RemoveAction(self, name)
-    if dynFrame.update[name] then
-      dynFrame.update[name] = nil;
-      dynFrame.size = dynFrame.size - 1
-      if dynFrame.size == 0 then
-        dynFrame.frame:Hide();
-      end
-    end
-  end
-
-  -- Setup frame
-  dynFrame.frame:Hide();
-  dynFrame.frame:SetScript("OnUpdate", function(self, elapsed)
-    -- Start timing
-    local start = debugprofilestop();
-    local hasData = true;
-
-    -- Resume as often as possible (Limit to 16ms per frame -> 60 FPS)
-    while (debugprofilestop() - start < 16 and hasData) do
-      -- Stop loop without data
-      hasData = false;
-
-      -- Resume all coroutines
-      for name, func in pairs(dynFrame.update) do
-        -- Loop has data
-        hasData = true;
-
-        -- Resume or remove
-        if coroutine.status(func) ~= "dead" then
-          local ok, msg = coroutine.resume(func)
-          if not ok then
-            geterrorhandler()(msg .. '\n' .. debugstack(func))
-          end
-        else
-          dynFrame:RemoveAction(name);
-        end
-      end
-    end
-  end);
-end
-
-Private.dynFrame = dynFrame;
-
-function Private.ValueToPath(data, path, value)
-    if not data then
-      return
-    end
-    if(#path == 1) then
-      data[path[1]] = value;
-    else
-      local reducedPath = {};
-      for i=2,#path do
-        reducedPath[i-1] = path[i];
-      end
-      Private.ValueToPath(data[path[1]], reducedPath, value);
-    end
-  end

@@ -4,11 +4,12 @@
 ## Author: Your Name Here
 ## Version: 0.1
 ## SavedVariables: MacroMicroSaved
+## OptionalDeps: LibAdvancedIconSelector-1.0
+## X-Embeds: LibAdvancedIconSelector-1.0
 
 embeds.xml
-
+_init.lua
 Core.lua
-
 
 Transmission.lua
 SpellCache.lua

@@ -14,18 +14,22 @@ local iconPicker
 
 local spellCache = MacroMicro.spellCache
 
-local function ConstructIconPicker(frame)
-  local group = AceGUI:Create("InlineGroup");
-  group.frame:SetParent(frame);
-  group.frame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -17, 30); -- 12
-  group.frame:SetPoint("TOPLEFT", frame, "TOPLEFT", 17, -50);
-  group.frame:Hide();
-  group:SetLayout("fill");
+local function ConstructIconPicker()
+  local group = AceGUI:Create("SimpleGroup");
+  group:SetFullWidth(true);
+  group:SetFullHeight(true);
+  group:SetLayout("Flow");
+
+  local scrollcontainer = AceGUI:Create("InlineGroup");
+  scrollcontainer:SetFullWidth(true);
+  scrollcontainer:SetFullHeight(true); -- probably?
+  scrollcontainer:SetLayout("Fill"); -- important!
 
   local scroll = AceGUI:Create("ScrollFrame");
-  scroll:SetLayout("flow");
-  scroll.frame:SetClipsChildren(true);
-  group:AddChild(scroll);
+  scroll:SetLayout("List");
+  scroll:SetFullWidth(true);
+  scroll:SetFullHeight(true);
+  scrollcontainer:AddChild(scroll);
 
   local function iconPickerFill(subname, doSort)
     scroll:ReleaseChildren();
@@ -49,12 +53,12 @@ local function ConstructIconPicker(frame)
       button:SetImage(icon);
       button:SetCallback("OnClick", function()
         group.pickCallback(icon);
-        --group:Pick(icon);
       end);
-      scroll:AddChild(button);
-
       usedIcons[icon] = true;
+      scroll:AddChild(button);
     end
+
+    local iconsToAdd = {};
 
     local num = 0;
     if(subname and subname ~= "") then
@@ -64,7 +68,7 @@ local function ConstructIconPicker(frame)
             for spell, icon in icons.spells:gmatch("(%d+)=(%d+)") do
               local iconId = tonumber(icon)
               if (not usedIcons[iconId]) then
-                AddButton(name, iconId)
+                iconsToAdd[name] = iconId;
                 num = num + 1;
                 if(num >= 500) then
                   break;
@@ -75,7 +79,7 @@ local function ConstructIconPicker(frame)
             for _, icon in icons.achievements:gmatch("(%d+)=(%d+)") do
               local iconId = tonumber(icon)
               if (not usedIcons[iconId]) then
-                AddButton(name, iconId)
+                iconsToAdd[name] = iconId;
                 num = num + 1;
                 if(num >= 500) then
                   break;
@@ -90,6 +94,10 @@ local function ConstructIconPicker(frame)
         end
       end
     end
+
+    for k, v in pairs(iconsToAdd) do
+      AddButton(k, v);
+    end
   end
 
   local blizzardIcons = {}
@@ -98,30 +106,42 @@ local function ConstructIconPicker(frame)
   GetMacroIcons(blizzardIcons);
   GetMacroItemIcons(blizzardIcons);
 
-  local input = CreateFrame("EditBox", nil, group.frame, "InputBoxTemplate");
-  input:SetScript("OnTextChanged", function(...) iconPickerFill(input:GetText(), false); end);
-  input:SetScript("OnEnterPressed", function(...) iconPickerFill(input:GetText(), true); end);
-  input:SetAutoFocus(false);
---  input:SetScript("OnEscapePressed", function(...) input:SetText(""); iconPickerFill(input:GetText(), true); end);
-  input:SetWidth(170);
-  input:SetHeight(15);
-  input:SetPoint("BOTTOMRIGHT", group.frame, "TOPRIGHT", -12, -5);
+  local input = AceGUI:Create("EditBox");
+  input:DisableButton(true);
+  input:SetLabel("Search by spell name or enter a spell ID")
+  -- input:SetWidth(170);
+  -- input:SetHeight(15);
+  input:SetCallback("OnTextChanged", function(...) iconPickerFill(input:GetText(), false); end);
+  input:SetCallback("OnEnterPressed", function(...) iconPickerFill(input:GetText(), true); end);
 
-  local inputLabel = input:CreateFontString(nil, "OVERLAY", "GameFontNormal");
-  inputLabel:SetText("Search");
-  inputLabel:SetJustifyH("RIGHT");
-  inputLabel:SetPoint("BOTTOMLEFT", input, "TOPLEFT", 0, 5);
+--   local input = CreateFrame("EditBox", nil, group.frame, "InputBoxTemplate");
+--   input:SetScript("OnTextChanged", function(...) iconPickerFill(input:GetText(), false); end);
+--   input:SetScript("OnEnterPressed", function(...) iconPickerFill(input:GetText(), true); end);
+--   input:SetAutoFocus(false);
+-- --  input:SetScript("OnEscapePressed", function(...) input:SetText(""); iconPickerFill(input:GetText(), true); end);
+
+  -- input:SetPoint("BOTTOMRIGHT", group.frame, "TOPRIGHT", -12, -5);
+
+  -- local inputLabel = input.frame:CreateFontString(nil, "OVERLAY", "GameFontNormal");
+  -- inputLabel:SetText("Search");
+  -- inputLabel:SetJustifyH("RIGHT");
+  -- inputLabel:SetPoint("BOTTOMLEFT", input, "TOPLEFT", 0, 5);
 
   local icon = AceGUI:Create("Icon");
-  icon.frame:Disable();
-  icon.frame:SetParent(group.frame);
-  icon.frame:SetPoint("BOTTOMLEFT", group.frame, "TOPLEFT", 15, -15);
 
-  local iconLabel = input:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge");
-  iconLabel:SetNonSpaceWrap("true");
-  iconLabel:SetJustifyH("LEFT");
-  iconLabel:SetPoint("LEFT", icon.frame, "RIGHT", 5, 0);
-  iconLabel:SetPoint("RIGHT", input, "LEFT", -50, 0);
+  group:AddChild(icon);
+  group:AddChild(input);
+  group:AddChild(scroll);
+  
+  -- icon.frame:Disable();
+  -- icon.frame:SetParent(group.frame);
+  -- icon.frame:SetPoint("BOTTOMLEFT", group.frame, "TOPLEFT", 15, -15);
+
+  -- local iconLabel = input:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge");
+  -- iconLabel:SetNonSpaceWrap("true");
+  -- iconLabel:SetJustifyH("LEFT");
+  -- iconLabel:SetPoint("LEFT", icon.frame, "RIGHT", 5, 0);
+  -- iconLabel:SetPoint("RIGHT", input, "LEFT", -50, 0);
 
   function group.Pick(self, texturePath)
     local valueToPath = Private.ValueToPath
@@ -141,9 +161,9 @@ local function ConstructIconPicker(frame)
     local success = icon:SetImage(texturePath) and texturePath;
     print(success);
     if(success) then
-      iconLabel:SetText(texturePath);
+      icon:SetLabel(texturePath);
     else
-      iconLabel:SetText();
+      icon:SetLabel();
     end
   end
 
@@ -166,7 +186,7 @@ local function ConstructIconPicker(frame)
     --   end
     end
     -- group:Pick(self.givenPath);
-    frame.window = "icon";
+    --frame.window = "icon";
     --frame:UpdateFrameVisible()
     input:SetText("");
     input:SetFocus();
@@ -199,24 +219,26 @@ local function ConstructIconPicker(frame)
     group.Close();
   end
 
-  local cancel = CreateFrame("Button", nil, group.frame, "UIPanelButtonTemplate");
-  cancel:SetScript("OnClick", group.CancelClose);
-  cancel:SetPoint("bottomright", frame, "bottomright", -27, 11);
-  cancel:SetHeight(20);
-  cancel:SetWidth(100);
-  cancel:SetText("Cancel");
+  -- local cancel = CreateFrame("Button", nil, group.frame, "UIPanelButtonTemplate");
+  -- cancel:SetScript("OnClick", group.CancelClose);
+  -- cancel:SetPoint("bottomright", frame, "bottomright", -27, 11);
+  -- cancel:SetHeight(20);
+  -- cancel:SetWidth(100);
+  -- cancel:SetText("Cancel");
 
-  local close = CreateFrame("Button", nil, group.frame, "UIPanelButtonTemplate");
-  close:SetScript("OnClick", group.Close);
-  close:SetPoint("RIGHT", cancel, "LEFT", -10, 0);
-  close:SetHeight(20);
-  close:SetWidth(100);
-  close:SetText("Okay");
+  -- local close = CreateFrame("Button", nil, group.frame, "UIPanelButtonTemplate");
+  -- close:SetScript("OnClick", group.Close);
+  -- close:SetPoint("RIGHT", cancel, "LEFT", -10, 0);
+  -- close:SetHeight(20);
+  -- close:SetWidth(100);
+  -- close:SetText("Okay");
+
+  
 
   return group
 end
 
-function Private.IconPicker(frame)
-  iconPicker = iconPicker or ConstructIconPicker(frame)
+function Private.IconPicker()
+  iconPicker = iconPicker or ConstructIconPicker()
   return iconPicker
 end
