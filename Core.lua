@@ -36,6 +36,11 @@ local scrollStatusTable = {
     offset = 0
 };
 
+local scrollStatusTable = {
+    scrollvalue = 0,
+    offset = 0
+};
+
 local fameStatusTable = {};
 
 local macroTree = nil;
@@ -92,8 +97,9 @@ StaticPopupDialogs["DELETE_MACRO"] = {
     button2 = "Cancel",
     OnAccept = function(self, macroId)
         DeleteMacro(self.macroId);
+        macroTree:SelectByValue("new");
         ShowMacroMicro();
-        RefreshMacroFormBasedonSelectedTreeItem();
+        RefreshMacroFormBasedonSelectedTreeItem();        
     end,
     timeout = 0,
     whileDead = true,
@@ -115,6 +121,7 @@ end
 
 function Private.OpenSharedMacroWithData(data)
     ShowMacroMicro()
+    macroTree:SelectByValue("new");
     Private.OpenSharedMacro(sharedMacroLabel, data);
 end
 
@@ -126,9 +133,8 @@ function Private.OpenSharedMacro(label, data)
         macroBody = data.macroBody   
     end
     macroIcon:SetImage(macroTexture);
-    if macroBody then
-        macroBodyEditBox:SetText(macroBody);
-    end
+    macroBodyEditBox:SetText(macroBody);
+    
     macroNameEditBox:SetText(macroName);
     macroNameEditBox:SetFocus();
     SetMacroTypeRadioButtons();
@@ -160,14 +166,19 @@ function GetSelectedMacroTypeAndId()
     -- get the macro index.
     if macroTreeStatusTable and macroTreeStatusTable.selected then
         if macroTreeStatusTable.selected == "new" then
-            return "new";
+            return "new", nil;
         end
-        local macroType, macroIndexString = ("\001"):split(macroTreeStatusTable.selected);
+        local macroType, macroIndex = GetMacroTypeAndMacroIdFromUniqueValue(macroTreeStatusTable.selected);
 
-        return macroType, tonumber(macroIndexString);
+        return macroType, macroIndex;
     end
+    -- Default to the new macro tab if nothing is selected.
+    return "new", nil;
+end
 
-    return nil, nil;
+function GetMacroTypeAndMacroIdFromUniqueValue(uniqueValue)
+    local macroType, macroIndexString = ("\001"):split(uniqueValue);
+    return macroType, tonumber(macroIndexString)
 end
 
 
@@ -208,6 +219,7 @@ end
 
 function RefreshMacroFormBasedonSelectedTreeItem()
     local macroType, macroIndex = GetSelectedMacroTypeAndId();
+
     if macroType == "new" then
         RefreshMacroForm();
         return
@@ -220,11 +232,15 @@ end
 function RefreshMacroForm(macroType, macroName, icon, macroBody)
     if icon then
         macroIcon:SetImage(icon);
+    else
+        macroIcon:SetImage("INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK");
     end
-    if macroBody then
-        macroBodyEditBox:SetText(macroBody);
-        macroBodyEditBox:Fire("OnTextChanged");
+    if not macroBody then
+        -- Can't SetText with a nil value
+        macroBody = "";
     end
+    macroBodyEditBox:SetText(macroBody);
+    macroBodyEditBox:Fire("OnTextChanged");
     macroNameEditBox:SetText(macroName);
     macroNameEditBox:Fire("OnTextChanged");
     SetMacroTypeRadioButtons(macroType);
@@ -270,35 +286,36 @@ function Show_Options()
     if not macroTreeStatusTable.selected then
         macroTree:SelectByValue("new");
     end
-    macroTree:SetCallback("OnGroupSelected", function(self)
-        local macroType, macroIndex = GetSelectedMacroTypeAndId();
-        if macroType == "new" then
-            Private.OpenSharedMacro(self, nil);
-            return
-        end
+    -- macroTree:SetCallback("OnGroupSelected", function(self)
+    --     local macroType, macroIndex = GetSelectedMacroTypeAndId();
+    --     if macroType == "new" then
+    --         RefreshMacroFormBasedonSelectedTreeItem();
+    --         return
+    --     end
         
-        local macroName, icon, macroBody = GetMacroInfo(macroIndex);
-        if (IsShiftKeyDown()) then
-            local editbox = GetCurrentKeyBoardFocus();
-            local fullName;
-            if(editbox) then
-                if (not fullName) then
-                local name, realm = UnitFullName("player")
-                if realm then
-                    fullName = name.."-".. realm
-                else
-                    fullName = name
-                end
-                end
+    --     if (IsShiftKeyDown()) then
+    --         local macroName, icon, macroBody = GetMacroInfo(macroIndex);
+    --         local editbox = GetCurrentKeyBoardFocus();
+    --         local fullName;
+    --         if(editbox) then
+    --             if (not fullName) then
+    --             local name, realm = UnitFullName("player")
+    --             if realm then
+    --                 fullName = name.."-".. realm
+    --             else
+    --                 fullName = name
+    --             end
+    --             end
                 
-                editbox:Insert("[MacroMicro: "..fullName.." - "..macroName.."]");
-                Private.linked = Private.linked or {}
-                Private.linked[macroName] = GetTime()
-            end
-        else
-            RefreshMacroForm(macroIndex, macroName, icon, macroBody);
-        end
-    end);
+    --             editbox:Insert("[MacroMicro: "..fullName.." - "..macroName.."]");
+    --             Private.linked = Private.linked or {}
+    --             Private.linked[macroName] = GetTime()
+    --         end
+    --     else
+    --         RefreshMacroFormBasedonSelectedTreeItem();
+    --     end
+    -- end);
+
 
     local newButton = AceGUI:Create("Button");
     newButton:SetText("New Macro");
@@ -308,15 +325,6 @@ function Show_Options()
 
     macroTreeContainer:SetFullWidth(true);
     macroTreeContainer:AddChild(macroTree);
-    
-    
-    -- -- If we got a nil value for name, that means the macro doesn't exist.
-    -- -- This might happen if you delete the bottom most macro.
-    -- local macroName, macroTexture, macroBody = GetMacroInfo(selectedMacroId);
-    -- if macroName == nil then
-    --     selectedMacroId = 1;
-    -- end
-    -- local macroName, macroTexture, macroBody = GetMacroInfo(selectedMacroId);
 
 
     local macroTypeGroup = AceGUI:Create("SimpleGroup");
@@ -336,8 +344,6 @@ function Show_Options()
         macroTypeRadioButtons.characterMacroRadioButton:SetValue(not self:GetValue())
     end)
 
-    --SetMacroTypeRadioButtons(selectedMacroId)
-
     macroTypeGroup:AddChild(macroTypeRadioButtons.characterMacroRadioButton);
     macroTypeGroup:AddChild(macroTypeRadioButtons.accountMacroRadioButton);
 
@@ -349,11 +355,7 @@ function Show_Options()
     macroNameEditBox:SetCallback("OnTextChanged", function(self)
         self:SetLabel("Macro Name ("..string.len(macroNameEditBox:GetText()).."/16)");
     end);
-    -- if macroName ~= nil then
-    --     macroNameEditBox:SetText(macroName);
-    --     macroNameEditBox:SetLabel("Macro Name ("..string.len(macroNameEditBox:GetText()).."/16)");
-    -- end
-
+    
     macroBodyEditBox = AceGUI:Create("MultiLineEditBox");
     macroBodyEditBox:SetLabel("Macro Body (0/255)");
     macroBodyEditBox:SetRelativeWidth(1);
@@ -364,10 +366,6 @@ function Show_Options()
     macroBodyEditBox:SetCallback("OnTextChanged", function(self)
         self:SetLabel("Macro Body ("..string.len(macroBodyEditBox:GetText()).."/255)");
     end);
-    -- if macroName ~= nil then
-    --     macroBodyEditBox:SetText(macroBody);
-    --     macroBodyEditBox:Fire("OnTextChanged");
-    -- end
 
     macroIcon = AceGUI:Create("Icon");
     macroIcon:SetImage("INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK");
@@ -375,12 +373,16 @@ function Show_Options()
     macroIcon:SetCallback("OnClick", function(self)
         local macroType, macroIndex = GetSelectedMacroTypeAndId();
         if macroType ~= "new" then
-            PickupMacro(macroType);
+            PickupMacro(macroIndex);
         end;
     end);
-    -- if macroTexture ~= nil then
-    --     macroIcon:SetImage(macroTexture);
-    -- end
+    macroIcon.frame:RegisterForDrag("LeftButton")
+    macroIcon.frame:SetScript("OnDragStart", function(self)
+        local macroType, macroIndex = GetSelectedMacroTypeAndId();
+        if macroType ~= "new" then
+            PickupMacro(macroIndex);
+        end;
+    end);
 
     local saveButton = AceGUI:Create("Button");
     saveButton:SetText("Save");
@@ -390,14 +392,18 @@ function Show_Options()
         local newBody = macroBodyEditBox:GetText();
         local selectedMacroType, selectedMacroIndex = GetSelectedMacroTypeAndId();
         local editorMacroType = GetMacroTypeSelected();
+
         if selectedMacroType == "new" then
             local isCharacterMacro = editorMacroType == "character";
+            local selectedIcon = macroIcon.image:GetTexture();
             -- 134400 is the question mark icon
-            local newMacroId = CreateMacro(newName, 134400, newBody, isCharacterMacro);
+            local newMacroId = CreateMacro(newName, selectedIcon, newBody, isCharacterMacro);
             ShowMacroMicro();
 
             local path = editorMacroType .. "\001" .. newMacroId;
             macroTree:SelectByValue(path);
+            RefreshMacroFormBasedonSelectedTreeItem();
+            
         else
             local _, currentIcon, _ = GetMacroInfo(selectedMacroIndex);
             local newMacroId;
@@ -418,7 +424,7 @@ function Show_Options()
                 newMacroType = "character";
             end
             local path = newMacroType .. "\001" .. newMacroId;
-            macroTree:SelectByPath(path);
+            macroTree:SelectByValue(path);
             RefreshMacroFormBasedonSelectedTreeItem();
         end
     end);
@@ -435,47 +441,70 @@ function Show_Options()
         end
     end)
 
-    local shareButton = AceGUI:Create("Button");
-    shareButton:SetText("Share");
-    shareButton:SetWidth(100);
-    shareButton:SetCallback("OnClick", function()
-        local selectedMacroType, selectedMacroIndex = GetSelectedMacroTypeAndId()
-        local name, texture, body = GetMacroInfo(selectedMacroIndex);
-        local message = "|Hitem:myAddonName:value1:value2|h[Click here!]|h";
-    
-        local editbox = GetCurrentKeyBoardFocus();
-        local fullName;
-        if(editbox) then
-          if (not fullName) then
-            local name, realm = UnitFullName("player")
-            if realm then
-              fullName = name.."-".. realm
-            else
-              fullName = name
-            end
-          end
-          
-          editbox:Insert("[MacroMicro: "..fullName.." - "..name.."]");
-          Private.linked = Private.linked or {}
-          Private.linked[name] = GetTime()
-        end
-    end)
+    local scrollcontainer = AceGUI:Create("SimpleGroup");
+    scrollcontainer:SetFullWidth(true);
+    scrollcontainer:SetFullHeight(true); -- probably?
+    scrollcontainer:SetLayout("Fill"); -- important!
 
-    macroTree:AddChild(macroTypeGroup);
-    macroTree:AddChild(macroNameEditBox);
-    macroTree:AddChild(macroIcon);
-    macroTree:AddChild(macroBodyEditBox);
-    macroTree:AddChild(saveButton);
-    macroTree:AddChild(deleteButton);
+    local scroll = AceGUI:Create("ScrollFrame");
+    scroll:SetLayout("List");
+    scroll:SetFullWidth(true);
+    scroll:SetFullHeight(true);
+    scroll:SetStatusTable(scrollStatusTable);
+    scrollcontainer:AddChild(scroll)
+
+
+    scroll:AddChild(macroTypeGroup);
+    scroll:AddChild(macroNameEditBox);
+    scroll:AddChild(macroIcon);
+    scroll:AddChild(macroBodyEditBox);
+    scroll:AddChild(saveButton);
+    scroll:AddChild(deleteButton);
 
     local shareInfoLabel = AceGUI:Create("Label");
     shareInfoLabel:SetFullWidth(true);
     shareInfoLabel:SetText("To share a macro, shift-click it in the left menu while your chat box is open. Similar to how WeakAuras are shared.");
-    macroTree:AddChild(CreateSeparatorLabel());
-    macroTree:AddChild(CreateSeparatorLabel());
-    macroTree:AddChild(shareInfoLabel);
-end 
+    scroll:AddChild(CreateSeparatorLabel());
+    scroll:AddChild(CreateSeparatorLabel());
+    scroll:AddChild(shareInfoLabel);
 
+    macroTree:AddChild(scroll);
+
+    RefreshMacroFormBasedonSelectedTreeItem();
+
+    -- Override the OnClick of buttons to support shift-clicking
+    local buttonCount = table.getn(macroTree.buttons)
+    for i=1, table.getn(macroTree.buttons) do
+        local previousOnClick = macroTree.buttons[i]:GetScript("OnClick");
+
+        macroTree.buttons[i]:SetScript("OnClick", function(self)
+            if (IsShiftKeyDown()) then
+                local macroType, macroIndex = GetMacroTypeAndMacroIdFromUniqueValue(self.uniquevalue);
+                local macroName, icon, macroBody = GetMacroInfo(macroIndex);
+                local editbox = GetCurrentKeyBoardFocus();
+                local fullName;
+                if(editbox) then
+                    if (not fullName) then
+                    local name, realm = UnitFullName("player")
+                    if realm then
+                        fullName = name.."-".. realm
+                    else
+                        fullName = name
+                    end
+                    end
+                    
+                    editbox:Insert("[MacroMicro: "..fullName.." - "..macroName.."]");
+                    Private.linked = Private.linked or {}
+                    Private.linked[macroName] = GetTime()
+                end
+            else
+                previousOnClick(self);
+                local macroType, macroIndex = GetSelectedMacroTypeAndId();
+                RefreshMacroFormBasedonSelectedTreeItem();
+            end
+        end);
+    end
+end 
 
 SlashCmdList["MACROMICRO"] = function()
     ShowMacroMicro()
