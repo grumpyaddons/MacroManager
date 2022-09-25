@@ -403,6 +403,12 @@ function Show_Options()
     deleteButton:SetText("Delete");
     deleteButton:SetWidth(100);
     deleteButton:SetCallback("OnClick", function()
+        local macroType, macroIndex = GetSelectedMacroTypeAndId();
+
+        if macroType == "new" then
+            return
+        end
+
         local selectedMacroType, selectedMacroIndex = GetSelectedMacroTypeAndId()
         local currentMacroName, _, _ = GetMacroInfo(selectedMacroIndex);
         local dialog = StaticPopup_Show("DELETE_MACRO", currentMacroName);
