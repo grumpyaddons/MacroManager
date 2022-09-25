@@ -286,36 +286,6 @@ function Show_Options()
     if not macroTreeStatusTable.selected then
         macroTree:SelectByValue("new");
     end
-    -- macroTree:SetCallback("OnGroupSelected", function(self)
-    --     local macroType, macroIndex = GetSelectedMacroTypeAndId();
-    --     if macroType == "new" then
-    --         RefreshMacroFormBasedonSelectedTreeItem();
-    --         return
-    --     end
-        
-    --     if (IsShiftKeyDown()) then
-    --         local macroName, icon, macroBody = GetMacroInfo(macroIndex);
-    --         local editbox = GetCurrentKeyBoardFocus();
-    --         local fullName;
-    --         if(editbox) then
-    --             if (not fullName) then
-    --             local name, realm = UnitFullName("player")
-    --             if realm then
-    --                 fullName = name.."-".. realm
-    --             else
-    --                 fullName = name
-    --             end
-    --             end
-                
-    --             editbox:Insert("[MacroMicro: "..fullName.." - "..macroName.."]");
-    --             Private.linked = Private.linked or {}
-    --             Private.linked[macroName] = GetTime()
-    --         end
-    --     else
-    --         RefreshMacroFormBasedonSelectedTreeItem();
-    --     end
-    -- end);
-
 
     local newButton = AceGUI:Create("Button");
     newButton:SetText("New Macro");
