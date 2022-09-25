@@ -1,4 +1,4 @@
-﻿--[[========================================================================================
+--[[========================================================================================
       LibAdvancedIconSelector provides a searchable icon selection GUI to World
       of Warcraft addons.
       
@@ -30,10 +30,12 @@
       aren't going to break someone else's addon!
     ========================================================================================]]
 
+local _, S = ... -- FileData gets added to the shared table
+
 local DEBUG = false
 if DEBUG and LibDebug then LibDebug() end
 
-local MAJOR_VERSION = "LibAdvancedIconSelector-1.0"
+local MAJOR_VERSION = "LibAdvancedIconSelector-1.0-LMIS"
 local MINOR_VERSION = 14			-- (do not call GetAddOnMetaData)
 
 if not LibStub then error(MAJOR_VERSION .. " requires LibStub to operate") end
@@ -53,6 +55,7 @@ local SCAN_PER_TICK = 1000			-- How many icons to scan per tick?
 local initialized = false
 local MACRO_ICON_FILENAMES = { }
 local ITEM_ICON_FILENAMES = { }
+local FILEDATA_ICON_FILENAMES = { }
 
 local keywordLibrary = nil			-- The currently loaded keyword library
 
@@ -156,6 +159,7 @@ function lib:Embed(addon)
 	addon.CreateSearch = lib.CreateSearch
 	addon.GetNumMacroIcons = lib.GetNumMacroIcons
 	addon.GetNumItemIcons = lib.GetNumItemIcons
+	addon.GetNumFileDataIcons = lib.GetNumFileDataIcons
 	addon.GetRevision = lib.GetRevision
 	addon.LoadKeywords = lib.LoadKeywords
 	addon.LookupKeywords = lib.LookupKeywords
@@ -189,6 +193,12 @@ end
 function lib:GetNumItemIcons()	-- (was removed from the API, but can still be useful when you don't need filenames)
 	Helpers.InitialInit()
 	return #ITEM_ICON_FILENAMES
+end
+
+-- Returns the number of "filedata" icons.  This may go slow the first time it is run if icon filenames aren't yet loaded.
+function lib:GetNumFileDataIcons()
+	Helpers.InitialInit()
+	return #FILEDATA_ICON_FILENAMES
 end
 
 -- Returns the revision # of the loaded library instance.
@@ -258,7 +268,7 @@ function IconSelectorWindow:Create(name, parent, options)
 	if not parent then parent = UIParent end
 	options = Helpers.ApplyDefaults(options, defaults)
 
-	self = self:MixInto(CreateFrame("Frame", name, parent))
+	self = self:MixInto(CreateFrame("Frame", name, parent, "BackdropTemplate"))
 	self:Hide()
 	self:SetFrameStrata("MEDIUM")
 	self:SetSize(options.width, options.height)
@@ -917,6 +927,11 @@ function Helpers.InitialInit()
 		initialized = true
 		GetMacroIcons(MACRO_ICON_FILENAMES)
 		GetMacroItemIcons(ITEM_ICON_FILENAMES)
+		
+		for k in pairs(S.FileData) do
+			tinsert(FILEDATA_ICON_FILENAMES, k)
+		end
+		sort(FILEDATA_ICON_FILENAMES) -- sort by FileDataID
 	end
 end
 
@@ -1019,9 +1034,11 @@ function Helpers.CreateDefaultSection(name)
 	if name == "DynamicIcon" then
 		return { count = 1, GetIconInfo = function(index) return index, "Dynamic", "INV_Misc_QuestionMark" end }
 	elseif name == "MacroIcons" then
-		return { count = #MACRO_ICON_FILENAMES, GetIconInfo = function(index) return index, "Macro", MACRO_ICON_FILENAMES[index] end }
+		return { count = #MACRO_ICON_FILENAMES, GetIconInfo = function(index) local id = MACRO_ICON_FILENAMES[index] return index, "Macro", S.FileData[id] or id, id end }
 	elseif name == "ItemIcons" then
-		return { count = #ITEM_ICON_FILENAMES, GetIconInfo = function(index) return index, "Item", ITEM_ICON_FILENAMES[index] end }
+		return { count = #ITEM_ICON_FILENAMES, GetIconInfo = function(index) local id = ITEM_ICON_FILENAMES[index] return index, "Item", S.FileData[id] or id, id end }
+	elseif name == "FileDataIcons" then
+		return { count = #FILEDATA_ICON_FILENAMES, GetIconInfo = function(index) local id = FILEDATA_ICON_FILENAMES[index] return index, "FileData", S.FileData[id] or id, id end }
 	end
 end
 
@@ -1174,13 +1191,13 @@ function SearchObject:private_OnSearchTick()
 			break
 		end
 
-		local id, kind, texture = self:GetIconInfo(self.searchIndex)
+		local id, kind, texture, fdid = self:GetIconInfo(self.searchIndex)
 		if self.OnIconScanned then self:OnIconScanned(texture, self.searchIndex, id, kind) end
 
 		if texture then
 			local keywordString = lib:LookupKeywords(texture)
 			if self:private_Matches(texture, keywordString, self.parsedParameter) then
-				if self.OnSearchResultAdded then self:OnSearchResultAdded(texture, self.searchIndex, id, kind) end
+				if self.OnSearchResultAdded then self:OnSearchResultAdded(texture, self.searchIndex, id, kind, fdid) end
 			end
 		end
 	end

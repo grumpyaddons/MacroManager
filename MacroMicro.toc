@@ -15,3 +15,6 @@ Transmission.lua
 SpellCache.lua
 IconPicker.lua
 AceGUIWidget-SecureActionButton.lua
+
+Libs\LibAdvancedIconSelector-1.0-LMIS\enUS.lua
+Libs\LibAdvancedIconSelector-1.0-LMIS\LibAdvancedIconSelector-1.0-LMIS.lua

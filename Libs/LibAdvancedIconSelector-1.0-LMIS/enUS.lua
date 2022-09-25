@@ -1,4 +1,4 @@
-﻿--[[========================================================================================
+--[[========================================================================================
       LibAdvancedIconSelector provides a searchable icon selection GUI to World
       of Warcraft addons.
       
@@ -30,7 +30,7 @@
       aren't going to break someone else's addon!
     ========================================================================================]]
 
-local L = LibStub:GetLibrary("AceLocale-3.0"):NewLocale("LibAdvancedIconSelector-1.0", "enUS", true)
+local L = LibStub:GetLibrary("AceLocale-3.0"):NewLocale("LibAdvancedIconSelector-1.0-LMIS", "enUS", true)
 if not L then return end
 
 -- Note: Although the icon selector may be localized, the search feature will still operate on english filenames and keywords.

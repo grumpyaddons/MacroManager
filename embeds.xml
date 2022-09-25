@@ -8,5 +8,7 @@
   <Include file="Libs\LibCompress\lib.xml"/>
   <Include file="Libs\LibSerialize\lib.xml"/>
   <Script file="Libs\LibDeflate\LibDeflate.lua"/>
-  <Include file="Libs\LibAdvancedIconSelector-1.0\LibAdvancedIconSelector-1.0.xml"/>
+  <Include file="Libs\AceTimer-3.0\AceTimer-3.0.xml"/>
+  <Include file="Libs\AceLocale-3.0\AceLocale-3.0.xml"/>
+  <!-- <Include file="Libs\LibAdvancedIconSelector-1.0\LibAdvancedIconSelector-1.0.xml"/> -->
 </Ui>

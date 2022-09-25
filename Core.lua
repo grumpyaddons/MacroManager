@@ -2,9 +2,6 @@ local AddonName, Private = ...
 
 local AceGUI = LibStub("AceGUI-3.0");
 
-
-
-
 local Predictor = {}
 function Predictor:Initialize()
 end
@@ -256,6 +253,8 @@ function Show_Options()
     iconPickerParent.iconPicker = Private.IconPicker(iconPickerParent);
     iconPickerParent:Hide();
 
+    
+
     -- Close on escape taken from https://stackoverflow.com/a/61215014
     -- Add the frame as a global variable under the name `MyGlobalFrameName`
     _G["MacroMicroFrame"] = frame.frame
@@ -355,14 +354,21 @@ function Show_Options()
     changeIconButton:SetText("Change");
     changeIconButton:SetWidth(100);
     changeIconButton:SetCallback("OnClick", function()
-        iconPickerParent:AddChild(iconPickerParent.iconPicker);
-        iconPickerParent.iconPicker:Open(baseObject, paths, groupIcon, function(pickedIcon)
-            macroIcon:SetImage(pickedIcon);
-        end);
-        iconPickerParent.frame:ClearAllPoints();
-        iconPickerParent.frame:SetPoint("TOP", frame.frame, "TOP");
-        iconPickerParent.frame:SetPoint("LEFT", frame.frame, "RIGHT");
-        iconPickerParent:Show();
+        LoadFileData();
+        local lib = LibStub("LibAdvancedIconSelector-1.0-LMIS")    -- (ideally, this would be loaded on-demand)
+        local options = { }
+        local newIconPicker = lib:CreateIconSelectorWindow("MacroMicroIconPicker", UIParent, options)
+        newIconPicker:SetPoint("CENTER");
+        newIconPicker:Show();
+
+        -- iconPickerParent:AddChild(iconPickerParent.iconPicker);
+        -- iconPickerParent.iconPicker:Open(baseObject, paths, groupIcon, function(pickedIcon)
+        --     macroIcon:SetImage(pickedIcon);
+        -- end);
+        -- iconPickerParent.frame:ClearAllPoints();
+        -- iconPickerParent.frame:SetPoint("TOP", frame.frame, "TOP");
+        -- iconPickerParent.frame:SetPoint("LEFT", frame.frame, "RIGHT");
+        -- iconPickerParent:Show();
     end);
 
     local saveButton = AceGUI:Create("Button");
@@ -506,5 +512,24 @@ function ShowMacroMicro()
     end
     MacroMicro.spellCache.Build();
     Show_Options();
+end
+
+-- save memory by only loading FileData when needed
+function LoadFileData()
+    local addon = "MacroMicroData";
+	if not Private.FileData then
+		local loaded, reason = LoadAddOn(addon)
+		if not loaded then
+			if reason == "DISABLED" then
+				EnableAddOn(addon, true)
+				LoadAddOn(addon)
+			else
+				error(addon.." is "..reason)
+			end
+		end
+		local fd = _G[addon]
+        local isRetail = false;
+		Private.FileData = isRetail and fd:GetFileDataRetail() or fd:GetFileDataClassic()
+	end
 end
 
