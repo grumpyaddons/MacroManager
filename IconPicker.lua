@@ -97,7 +97,6 @@ local function ConstructIconPicker(frame)
   GetLooseMacroItemIcons(blizzardIcons);
   GetMacroIcons(blizzardIcons);
   GetMacroItemIcons(blizzardIcons);
-  DevTools_Dump(blizzardIcons);
 
   local input = CreateFrame("EditBox", nil, group.frame, "InputBoxTemplate");
   input:SetScript("OnTextChanged", function(...) iconPickerFill(input:GetText(), false); end);
@@ -125,8 +124,6 @@ local function ConstructIconPicker(frame)
   iconLabel:SetPoint("RIGHT", input, "LEFT", -50, 0);
 
   function group.Pick(self, texturePath)
-    print(texturePath);
-    print("in pick");
     local valueToPath = Private.ValueToPath
     if self.groupIcon then
       valueToPath(self.baseObject, self.paths[self.baseObject.id], texturePath)
