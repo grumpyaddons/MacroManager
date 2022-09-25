@@ -3,9 +3,14 @@
 ## Notes: Some notes about this addon.
 ## Author: Your Name Here
 ## Version: 0.1
+## SavedVariables: MacroMicroSaved
 
 embeds.xml
 
 Core.lua
+
+
 Transmission.lua
+SpellCache.lua
+IconPicker.lua
 AceGUIWidget-SecureActionButton.lua
