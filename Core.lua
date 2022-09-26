@@ -331,7 +331,6 @@ function Show_Options()
         iconPicker = lib:CreateIconSelectorWindow("MacroMicroIconPicker", UIParent, options);
         iconPicker:SetScript("OnOkayClicked", function()
             macroIcon:SetImage("Interface\\Icons\\" .. iconPicker.iconsFrame.selectedButton.texture);
-            macroIcon.iconChanged = true;
         end);
         iconPicker:SetPoint("TOP", frame.frame, "TOP");
         iconPicker:SetPoint("LEFT", frame.frame, "RIGHT");
@@ -348,7 +347,7 @@ function Show_Options()
             StaticPopup_Show("MACRO_SAVE_ERROR", "Macro name can't be empty.");
             return
         end
-
+        
         local editorMacroType = GetMacroTypeSelected();
 
         local accountMacroCount, characterMacroCount = GetNumMacros();
@@ -361,7 +360,7 @@ function Show_Options()
             if editorMacroType == "character" and characterMacroCount == 18 then
                 StaticPopup_Show("MACRO_SAVE_ERROR", "You can only have 18 character macros. Delete one before creating a new one.");
                 return
-            elseif editorMacroType == "account" and characterMacroCount == 120 then
+            elseif editorMacroType == "account" and accountMacroCount == 120 then
                 StaticPopup_Show("MACRO_SAVE_ERROR", "You can only have 120 account macros. Delete one before creating a new one.");
                 return
             end
