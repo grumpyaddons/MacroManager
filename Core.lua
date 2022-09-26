@@ -2,19 +2,8 @@ local AddonName, Private = ...
 
 local AceGUI = LibStub("AceGUI-3.0");
 
-local Predictor = {}
-function Predictor:Initialize()
-end
-function Predictor:GetValues(text, values, max)
-end
-function Predictor:GetValue(text, key)
-end
-function Predictor:GetHyperlink(key)
-end
-LibStub("AceGUI-3.0-Search-EditBox"):Register("MacroPredictor", Predictor)
-
 local frame = nil;
-local iconPickerParent = nil;
+local iconPicker = nil;
 
 local sharedMacroLabel = nil;
 
@@ -28,10 +17,6 @@ local iconPickerFrameStatusTable = {};
 
 local macroTree = nil;
 local macroTreeStatusTable = {};
-
-local selectedMacroId = nil;
-local selectedMacroLabel = nil;
-local selectedMacroTexture = nil;
 
 local macroIcon = nil;
 local macroBodyEditBox = nil;
@@ -82,7 +67,7 @@ StaticPopupDialogs["DELETE_MACRO"] = {
         DeleteMacro(self.macroId);
         macroTree:SelectByValue("new");
         ShowMacroMicro();
-        RefreshMacroFormBasedonSelectedTreeItem();        
+        RefreshMacroFormBasedonSelectedTreeItem();
     end,
     timeout = 0,
     whileDead = true,
@@ -90,17 +75,14 @@ StaticPopupDialogs["DELETE_MACRO"] = {
     preferredIndex = 5
   }
 
-function CreateMacroHeaderLabel(text)
-    local label = AceGUI:Create("Label");
-    label:SetFullWidth(true);
-    label:SetText(text);
-    local background = label.frame:CreateTexture(nil, "BACKGROUND");
-    background:SetBlendMode("BLEND");
-    background:SetTexture("Interface\\Buttons\\UI-Listbox-Highlight");
-    background:SetAllPoints(label.frame);
-    label:SetFontObject(GameFontHighlight);
-    return label;
-end
+  StaticPopupDialogs["MACRO_SAVE_ERROR"] = {
+    text = "Couldn't save macro. %s",
+    button1 = "Okay",
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3,
+  }
 
 function Private.OpenSharedMacroWithData(data)
     ShowMacroMicro()
@@ -111,9 +93,9 @@ end
 function Private.OpenSharedMacro(label, data)
     local macroName, macroTexture, macroBody = "", "INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK", ""
     if data then
-        macroName = data.macroName
-        macroTexture = data.macroTexture
-        macroBody = data.macroBody   
+        macroName = data.macroName;
+        macroTexture = data.macroTexture;
+        macroBody = data.macroBody;
     end
     macroIcon:SetImage(macroTexture);
     macroBodyEditBox:SetText(macroBody);
@@ -232,37 +214,26 @@ end
 function Show_Options()
     frame = AceGUI:Create("Window");
     -- Couldn't figure out how to set the default height/width
-    frameStatusTable.height = frameStatusTable.height or 600;
+    frameStatusTable.height = frameStatusTable.height or 550;
     frameStatusTable.width = frameStatusTable.width or 500;
     frame:SetStatusTable(frameStatusTable);
     -- Setting the frame to high as it was above the delete macro dialog box
     frame.frame:SetFrameStrata("HIGH");
     frame:SetTitle("MacroMicro");
-    frame:SetCallback("OnClose", function(widget) 
-        iconPickerParent:Hide();
-        AceGUI:Release(widget) 
+    frame:SetCallback("OnClose", function(widget)
+        if iconPicker then
+            iconPicker:Hide();
+        end
+        AceGUI:Release(widget);
     end);
     frame:SetLayout("Fill");
-    
-
-    iconPickerParent = iconPickerParent or AceGUI:Create("Window");
-    iconPickerFrameStatusTable.height = iconPickerFrameStatusTable.height or 600;
-    iconPickerFrameStatusTable.width = iconPickerFrameStatusTable.width or 500;
-    iconPickerParent:SetStatusTable(iconPickerFrameStatusTable);
-    iconPickerParent:SetLayout("Fill");
-    iconPickerParent.iconPicker = Private.IconPicker(iconPickerParent);
-    iconPickerParent:Hide();
-
-    
 
     -- Close on escape taken from https://stackoverflow.com/a/61215014
     -- Add the frame as a global variable under the name `MyGlobalFrameName`
     _G["MacroMicroFrame"] = frame.frame
-    _G["MacroMicroIconPickerFrame"] = iconPickerParent.frame;
     -- Register the global variable `MyGlobalFrameName` as a "special frame"
     -- so that it is closed when the escape key is pressed.
     tinsert(UISpecialFrames, "MacroMicroFrame")
-    tinsert(UISpecialFrames, "MacroMicroIconPickerFrame")
 
     local macroTreeContainer = AceGUI:Create("SimpleGroup");
     macroTreeContainer:SetWidth(500);
@@ -357,18 +328,14 @@ function Show_Options()
         LoadFileData();
         local lib = LibStub("LibAdvancedIconSelector-1.0-LMIS")    -- (ideally, this would be loaded on-demand)
         local options = { }
-        local newIconPicker = lib:CreateIconSelectorWindow("MacroMicroIconPicker", UIParent, options)
-        newIconPicker:SetPoint("CENTER");
-        newIconPicker:Show();
-
-        -- iconPickerParent:AddChild(iconPickerParent.iconPicker);
-        -- iconPickerParent.iconPicker:Open(baseObject, paths, groupIcon, function(pickedIcon)
-        --     macroIcon:SetImage(pickedIcon);
-        -- end);
-        -- iconPickerParent.frame:ClearAllPoints();
-        -- iconPickerParent.frame:SetPoint("TOP", frame.frame, "TOP");
-        -- iconPickerParent.frame:SetPoint("LEFT", frame.frame, "RIGHT");
-        -- iconPickerParent:Show();
+        iconPicker = lib:CreateIconSelectorWindow("MacroMicroIconPicker", UIParent, options);
+        iconPicker:SetScript("OnOkayClicked", function()
+            macroIcon:SetImage("Interface\\Icons\\" .. iconPicker.iconsFrame.selectedButton.texture);
+            macroIcon.iconChanged = true;
+        end);
+        iconPicker:SetPoint("TOP", frame.frame, "TOP");
+        iconPicker:SetPoint("LEFT", frame.frame, "RIGHT");
+        iconPicker:Show();
     end);
 
     local saveButton = AceGUI:Create("Button");
@@ -376,12 +343,28 @@ function Show_Options()
     saveButton:SetWidth(100);
     saveButton:SetCallback("OnClick", function()
         local newName = macroNameEditBox:GetText();
+
+        if string.len(newName) == 0 then
+            StaticPopup_Show("MACRO_SAVE_ERROR", "Macro name can't be empty.");
+            return
+        end
+
+        local editorMacroType = GetMacroTypeSelected();
+
+        local accountMacroCount, characterMacroCount = GetNumMacros();
+
         local newBody = macroBodyEditBox:GetText();
         local newIcon = macroIcon.image:GetTexture();
         local selectedMacroType, selectedMacroIndex = GetSelectedMacroTypeAndId();
-        local editorMacroType = GetMacroTypeSelected();
 
         if selectedMacroType == "new" then
+            if editorMacroType == "character" and characterMacroCount == 18 then
+                StaticPopup_Show("MACRO_SAVE_ERROR", "You can only have 18 character macros. Delete one before creating a new one.");
+                return
+            elseif editorMacroType == "account" and characterMacroCount == 120 then
+                StaticPopup_Show("MACRO_SAVE_ERROR", "You can only have 120 account macros. Delete one before creating a new one.");
+                return
+            end
             local isCharacterMacro = editorMacroType == "character";
             -- 134400 is the question mark icon
             local newMacroId = CreateMacro(newName, newIcon, newBody, isCharacterMacro);
@@ -390,7 +373,6 @@ function Show_Options()
             local path = editorMacroType .. "\001" .. newMacroId;
             macroTree:SelectByValue(path);
             RefreshMacroFormBasedonSelectedTreeItem();
-            
         else
             local newMacroId;
             -- Was the macro type changed from account to character or vice versa?
@@ -422,6 +404,7 @@ function Show_Options()
         local macroType, macroIndex = GetSelectedMacroTypeAndId();
 
         if macroType == "new" then
+            -- Creating a new macro, can't delete it. Should probably hide this button.
             return
         end
 
@@ -505,7 +488,6 @@ end
 SLASH_MACROMICRO1 = "/macromicro";
 SLASH_MACROMICRO2 = "/mm";
 
-
 function ShowMacroMicro() 
     if frame and frame:IsVisible() then
         frame.frame:Hide();
@@ -528,7 +510,7 @@ function LoadFileData()
 			end
 		end
 		local fd = _G[addon]
-        local isRetail = false;
+        local isRetail = true;
 		Private.FileData = isRetail and fd:GetFileDataRetail() or fd:GetFileDataClassic()
 	end
 end
