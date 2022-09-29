@@ -21,7 +21,6 @@ local macroTreeStatusTable = {};
 local macroIcon = nil;
 local macroBodyEditBox = nil;
 local macroNameEditBox = nil;
-local macroIsAccountTypeRadioButton = nil;
 
 local macroTypeRadioButtons = {};
 macroTypeRadioButtons.characterMacroRadioButton = nil;
@@ -99,7 +98,7 @@ function Private.OpenSharedMacro(label, data)
     end
     macroIcon:SetImage(macroTexture);
     macroBodyEditBox:SetText(macroBody);
-    
+
     macroNameEditBox:SetText(macroName);
     macroNameEditBox:SetFocus();
     SetMacroTypeRadioButtons();
@@ -162,23 +161,30 @@ end
 function GenerateMacroTree()
     local characterMacros = {};
     local accountMacros = {};
-    local maxMacroButtons = 138;
-    for i=1, maxMacroButtons do
-        name, texture, body = GetMacroInfo(i);
-        
-        if name ~= nil then
-            local data = {
-                value = i,
-                text = name,
-                icon = texture
-            };
-            if i < 121 then
-                table.insert(accountMacros, data);
-            else
-                table.insert(characterMacros, data);
-            end
-        end
+    local accountMacroCount, characterMacroCount = GetNumMacros();
+
+    -- Account macros start at index 1 through 120
+    for i=1, accountMacroCount do
+        local name, texture, _ = GetMacroInfo(i);
+        local data = {
+            value = i,
+            text = name,
+            icon = texture
+        };
+        table.insert(accountMacros, data);
     end
+
+    -- Character macros start at index 121 through 138
+    for i=121, characterMacroCount + 120 do
+        local name, texture, _ = GetMacroInfo(i);
+        local data = {
+            value = i,
+            text = name,
+            icon = texture
+        };
+        table.insert(characterMacros, data);
+    end
+
     return characterMacros, accountMacros;
 end
 
@@ -189,7 +195,7 @@ function RefreshMacroFormBasedonSelectedTreeItem()
         RefreshMacroForm();
         return
     end
-    
+
     local macroName, icon, macroBody = GetMacroInfo(macroIndex);
     RefreshMacroForm(macroIndex, macroName, icon, macroBody);
 end
@@ -214,7 +220,7 @@ end
 function Show_Options()
     frame = AceGUI:Create("Window");
     -- Couldn't figure out how to set the default height/width
-    frameStatusTable.height = frameStatusTable.height or 550;
+    frameStatusTable.height = frameStatusTable.height or 600;
     frameStatusTable.width = frameStatusTable.width or 500;
     frame:SetStatusTable(frameStatusTable);
     -- Setting the frame to high as it was above the delete macro dialog box
@@ -263,9 +269,14 @@ function Show_Options()
     macroTreeContainer:SetFullWidth(true);
     macroTreeContainer:AddChild(macroTree);
 
-
     local macroTypeGroup = AceGUI:Create("SimpleGroup");
     macroTypeGroup:SetLayout("Flow");
+
+    local macroTypeLabel = AceGUI:Create("Label");
+    macroTypeLabel:SetText("Macro Type");
+    -- Make label match the edit box labels. Taken from AceGUI source
+    macroTypeLabel:SetColor(1,.82,0);
+    macroTypeLabel:SetFontObject(GameFontNormalSmall);
 
     macroTypeRadioButtons.characterMacroRadioButton = AceGUI:Create("CheckBox");
     macroTypeRadioButtons.characterMacroRadioButton:SetLabel("Character Macro");
@@ -292,8 +303,8 @@ function Show_Options()
     macroNameEditBox:SetCallback("OnTextChanged", function(self)
         self:SetLabel("Macro Name ("..string.len(macroNameEditBox:GetText()).."/16)");
     end);
-    
-    macroBodyEditBox = AceGUI:Create("MultiLineEditBox");
+
+    macroBodyEditBox = AceGUI:Create("MacroMicroMultiLineEditBox");
     macroBodyEditBox:SetLabel("Macro Body (0/255)");
     macroBodyEditBox:SetRelativeWidth(1);
     macroBodyEditBox:DisableButton(true);
@@ -321,15 +332,23 @@ function Show_Options()
         end;
     end);
 
+    local iconLabel = AceGUI:Create("Label");
+    iconLabel:SetText("Macro Icon");
+    -- Make label match the edit box labels. Taken from AceGUI source
+    iconLabel:SetColor(1,.82,0);
+    iconLabel:SetFontObject(GameFontNormalSmall);
+
     local changeIconButton = AceGUI:Create("Button");
     changeIconButton:SetText("Change");
     changeIconButton:SetWidth(100);
     changeIconButton:SetCallback("OnClick", function()
         LoadFileData();
         local lib = LibStub("LibAdvancedIconSelector-1.0-LMIS")    -- (ideally, this would be loaded on-demand)
-        local options = { }
+        local options = {
+            okayCancel = false
+         };
         iconPicker = lib:CreateIconSelectorWindow("MacroMicroIconPicker", UIParent, options);
-        iconPicker:SetScript("OnOkayClicked", function()
+        iconPicker.iconsFrame:SetScript("OnSelectedIconChanged", function()
             macroIcon:SetImage("Interface\\Icons\\" .. iconPicker.iconsFrame.selectedButton.texture);
         end);
         iconPicker:SetPoint("TOP", frame.frame, "TOP");
@@ -347,13 +366,33 @@ function Show_Options()
             StaticPopup_Show("MACRO_SAVE_ERROR", "Macro name can't be empty.");
             return
         end
-        
+
         local editorMacroType = GetMacroTypeSelected();
 
         local accountMacroCount, characterMacroCount = GetNumMacros();
 
         local newBody = macroBodyEditBox:GetText();
         local newIcon = macroIcon.image:GetTexture();
+
+        -- Stay a while and listen.
+        -- This if statement is needed for a convoluted reason.
+        -- By convention if you pass "INV_MISC_QUESTIONMARK" to the EditMacro command,
+        -- the server will automatically assume the correct icon based on the spell or
+        -- if the macro has "#showtooltip" in it.
+        -- Now, if for some reason you modified the macro icon to something custom,
+        -- you will not be able to use "#showtooltip" in that same macro and instead
+        -- you need to recreate the macro. I don't know if people deal with this a lot,
+        -- but this if statement basically fixes that scenario by allowing you to use
+        -- "#showtooltip" again. Overall an improvement albiet simple one.
+        -- HOWEVER, I survyed like 10 people and that didn't seem like much of an issue
+        -- and if I modified the behavior from the default macro UI, people might be confused.
+        -- Therefore, I'm going to comment this out for now but keep it because I spent
+        -- too much time figuring it out and I might bring it back
+        --
+        -- if string.find(newBody, "#showtooltip") then
+        --     newIcon = "INV_MISC_QUESTIONMARK";
+        -- end
+
         local selectedMacroType, selectedMacroIndex = GetSelectedMacroTypeAndId();
 
         if selectedMacroType == "new" then
@@ -427,12 +466,17 @@ function Show_Options()
     scroll:SetStatusTable(scrollStatusTable);
     scrollcontainer:AddChild(scroll)
 
-
+    scroll:AddChild(macroTypeLabel);
     scroll:AddChild(macroTypeGroup);
+    -- Don't need a seperator here because the inline group has a buffer.
     scroll:AddChild(macroNameEditBox);
+    scroll:AddChild(CreateSeparatorLabel());
+    scroll:AddChild(iconLabel);
     scroll:AddChild(macroIcon);
     scroll:AddChild(changeIconButton);
+    scroll:AddChild(CreateSeparatorLabel());
     scroll:AddChild(macroBodyEditBox);
+    scroll:AddChild(CreateSeparatorLabel());
     scroll:AddChild(saveButton);
     scroll:AddChild(deleteButton);
 
@@ -467,7 +511,7 @@ function Show_Options()
                         fullName = name
                     end
                     end
-                    
+
                     editbox:Insert("[MacroMicro: "..fullName.." - "..macroName.."]");
                     Private.linked = Private.linked or {}
                     Private.linked[macroName] = GetTime()
@@ -479,38 +523,83 @@ function Show_Options()
             end
         end);
     end
-end 
+end
 
 SlashCmdList["MACROMICRO"] = function()
     ShowMacroMicro()
 end
-SLASH_MACROMICRO1 = "/macromicro";
+SLASH_MACROMICRO1 = "/macromanager";
+SLASH_MACROMICRO2 = "/macromicro";
 SLASH_MACROMICRO2 = "/mm";
 
 function ShowMacroMicro() 
     if frame and frame:IsVisible() then
         frame.frame:Hide();
     end
-    MacroMicro.spellCache.Build();
     Show_Options();
 end
 
 -- save memory by only loading FileData when needed
 function LoadFileData()
     local addon = "MacroMicroData";
-	if not Private.FileData then
-		local loaded, reason = LoadAddOn(addon)
-		if not loaded then
-			if reason == "DISABLED" then
-				EnableAddOn(addon, true)
-				LoadAddOn(addon)
-			else
-				error(addon.." is "..reason)
-			end
-		end
-		local fd = _G[addon]
-        local isRetail = true;
-		Private.FileData = isRetail and fd:GetFileDataRetail() or fd:GetFileDataClassic()
-	end
+    if not Private.FileData then
+        local loaded, reason = LoadAddOn(addon)
+        if not loaded then
+            if reason == "DISABLED" then
+                EnableAddOn(addon, true)
+                LoadAddOn(addon)
+            else
+                error(addon.." is "..reason)
+            end
+        end
+        local fd = _G[addon]
+        Private.FileData = MacroMicro.IsRetail() and fd:GetFileDataRetail() or fd:GetFileDataClassic()
+    end
 end
 
+
+hooksecurefunc("ChatEdit_InsertLink", function(text)
+    print("somewhere");
+    print(text);
+    DevTools_Dump(text);
+    -- Code taken and modified from
+    -- https://github.com/Gethe/wow-ui-source/blob/f43c2b83f700177e6a2a215f5d7d0c0825abd636/Interface/FrameXML/ChatFrame.lua#L4549
+	if ( not text ) then
+		return
+	end
+    if ( macroBodyEditBox and macroBodyEditBox.editBox:HasFocus() ) then
+        local valueToInsert = text;
+
+        local cursorPosition = macroBodyEditBox.editBox:GetCursorPosition();
+        local isTheStartOfAnEmptyLine = cursorPosition == 0 or strsub(macroBodyEditBox.editBox:GetText(), cursorPosition, cursorPosition) == "\n";
+
+        local isItem = strfind(text, "item:", 1, true);
+        local isSpell = strfind(text, "spell:", 1, true);
+
+        if isItem then
+            print("isItem");
+            local item = GetItemInfo(text);
+            print("isItem");
+            if isTheStartOfAnEmptyLine then
+                if ( GetItemSpell(item) ) then
+                    valueToInsert = "/use "..item.."\n";
+                else
+                    valueToInsert = "/equip "..item.."\n";
+                end
+            else
+                valueToInsert = item
+            end
+        elseif isSpell then
+            local _, _, spellId = string.find(text, "spell:(%d+):");
+            local spellName = GetSpellInfo(tonumber(spellId));
+
+            if isTheStartOfAnEmptyLine then
+                valueToInsert = "/cast "..spellName.."\n";
+            else
+                valueToInsert = spellName;
+            end
+        end
+
+        macroBodyEditBox.editBox:Insert(valueToInsert);
+    end
+end);
