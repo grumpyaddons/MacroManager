@@ -559,9 +559,6 @@ end
 
 
 hooksecurefunc("ChatEdit_InsertLink", function(text)
-    print("somewhere");
-    print(text);
-    DevTools_Dump(text);
     -- Code taken and modified from
     -- https://github.com/Gethe/wow-ui-source/blob/f43c2b83f700177e6a2a215f5d7d0c0825abd636/Interface/FrameXML/ChatFrame.lua#L4549
 	if ( not text ) then
@@ -577,9 +574,7 @@ hooksecurefunc("ChatEdit_InsertLink", function(text)
         local isSpell = strfind(text, "spell:", 1, true);
 
         if isItem then
-            print("isItem");
             local item = GetItemInfo(text);
-            print("isItem");
             if isTheStartOfAnEmptyLine then
                 if ( GetItemSpell(item) ) then
                     valueToInsert = "/use "..item.."\n";
