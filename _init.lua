@@ -1,8 +1,10 @@
-local AddonName, Private = ...
+local AddonName, Private = ...;
 
-MacroMicro = {}
-local AddonObject = LibStub("AceAddon-3.0"):NewAddon("MacroMicro", "AceConsole-3.0");
-function MacroMicro.IsRetail()
+MacroManager = {}
+
+local AddonObject = LibStub("AceAddon-3.0"):NewAddon("MacroManager", "AceConsole-3.0");
+
+function MacroManager.IsRetail()
     return true;
 end
 
@@ -11,7 +13,7 @@ function AddonObject:OnInitialize()
   end
 
 function AddonObject:OnEnable()
-    MacroMicroSaved = MacroMicroSaved or {};
+    MacroManagerSaved = MacroManagerSaved or {};
 end
 
 function AddonObject:OnDisable()

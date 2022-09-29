@@ -44,11 +44,11 @@ local pairs, type, unpack = pairs, type, unpack
 local error = error
 local bit_band, bit_lshift, bit_rshift = bit.band, bit.lshift, bit.rshift
 
-local MacroMicro = {};
-MacroMicro.versionString = "alpha"
-local L = MacroMicro.L;
+local MacroManager = {};
+MacroManager.versionString = "alpha"
+local L = MacroManager.L;
 
-local versionString = MacroMicro.versionString;
+local versionString = MacroManager.versionString;
 
 -- Local functions
 local decodeB64, GenerateUniqueID
@@ -115,7 +115,7 @@ function GenerateUniqueID()
   end
   return table.concat(s)
 end
-MacroMicro.GenerateUniqueID = GenerateUniqueID
+MacroManager.GenerateUniqueID = GenerateUniqueID
 
 local function stripNonTransmissableFields(datum, fieldMap)
   for k, v in pairs(fieldMap) do
@@ -151,7 +151,7 @@ function CompressDisplay(data, version)
   local copiedData = CopyTable(data)
   local non_transmissable_fields = version >= 2000 and Private.non_transmissable_fields_v2000 or Private.non_transmissable_fields
   stripNonTransmissableFields(copiedData, non_transmissable_fields)
-  copiedData.tocversion = MacroMicro.BuildInfo
+  copiedData.tocversion = MacroManager.BuildInfo
   return copiedData;
 end
 
@@ -164,12 +164,12 @@ local function filterFunc(_, event, msg, player, l, cs, t, flag, channelId, ...)
   local remaining = msg;
   local done;
   repeat
-    local start, finish, characterName, displayName = remaining:find("%[MacroMicro: ([^%s]+) %- (.*)%]");
+    local start, finish, characterName, displayName = remaining:find("%[MacroManager: ([^%s]+) %- (.*)%]");
     if(characterName and displayName) then
       characterName = characterName:gsub("|c[Ff][Ff]......", ""):gsub("|r", "");
       displayName = displayName:gsub("|c[Ff][Ff]......", ""):gsub("|r", "");
       newMsg = newMsg..remaining:sub(1, start-1);
-      newMsg = newMsg.."|Hgarrmission:macromicro|h|cFF8800FF["..characterName.." |r|cFF8800FF- "..displayName.."]|h|r";
+      newMsg = newMsg.."|Hgarrmission:macromanager|h|cFF8800FF["..characterName.." |r|cFF8800FF- "..displayName.."]|h|r";
       remaining = remaining:sub(finish + 1);
     else
       done = true;
@@ -235,30 +235,30 @@ local tooltipLoading;
 local receivedData;
 
 hooksecurefunc("SetItemRef", function(link, text)
-  if(link == "garrmission:macromicro") then
-    local _, _, characterName, displayName = text:find("|Hgarrmission:macromicro|h|cFF8800FF%[([^%s]+) |r|cFF8800FF%- (.*)%]|h");
+  if(link == "garrmission:macromanager") then
+    local _, _, characterName, displayName = text:find("|Hgarrmission:macromanager|h|cFF8800FF%[([^%s]+) |r|cFF8800FF%- (.*)%]|h");
     if(characterName and displayName) then
       characterName = characterName:gsub("|c[Ff][Ff]......", ""):gsub("|r", "");
       displayName = displayName:gsub("|c[Ff][Ff]......", ""):gsub("|r", "");
       if(IsShiftKeyDown()) then
         local editbox = GetCurrentKeyBoardFocus();
         if(editbox) then
-          editbox:Insert("[MacroMicro: "..characterName.." - "..displayName.."]");
+          editbox:Insert("[MacroManager: "..characterName.." - "..displayName.."]");
         end
       else
         characterName = characterName:gsub("%.", "")
         ShowTooltip({
-          {2, "MacroMicro", displayName, 0.5, 0, 1, 1, 1, 1},
+          {2, "MacroManager", displayName, 0.5, 0, 1, 1, 1, 1},
           {1, string.format("Requesting display information from %s ...", characterName), 1, 0.82, 0},
           {1, "Note, that cross realm transmission is possible if you are on the same group", 1, 0.82, 0}
         });
         tooltipLoading = true;
         receivedData = false;
         RequestDisplay(characterName, displayName);
-        -- MacroMicro.timer:ScheduleTimer(function()
+        -- MacroManager.timer:ScheduleTimer(function()
         --   if (tooltipLoading and not receivedData and ItemRefTooltip:IsVisible()) then
         --     ShowTooltip({
-        --       {2, "MacroMicro", displayName, 0.5, 0, 1, 1, 1, 1},
+        --       {2, "MacroManager", displayName, 0.5, 0, 1, 1, 1, 1},
         --       {1, "Error not receiving display information from %s", 1, 0, 0},
         --       {1, "Note, that cross realm transmission is possible if you are on the same group", 1, 0.82, 0}
         --     })
@@ -267,8 +267,8 @@ hooksecurefunc("SetItemRef", function(link, text)
       end
     else
       ShowTooltip({
-        {1, "MacroMicro", 0.5, 0, 1},
-        {1, "Malformed MacroMicro link", 1, 0, 0}
+        {1, "MacroManager", 0.5, 0, 1},
+        {1, "Malformed MacroManager link", 1, 0, 0}
       });
     end
   end
@@ -438,7 +438,7 @@ local function recurseStringify(data, level, lines)
 end
 
 function Private.DataToString(id)
-  local data = MacroMicro.GetData(id)
+  local data = MacroManager.GetData(id)
   if data then
     return Private.SerializeTable(data):gsub("|", "||")
   end
@@ -472,7 +472,7 @@ local delayedImport = CreateFrame("Frame")
 
 local function ImportNow(data, children, target, sender, callbackFunc)
   if InCombatLockdown() then
-    MacroMicro.prettyPrint("Importing will start after combat ends.")
+    MacroManager.prettyPrint("Importing will start after combat ends.")
 
     delayedImport:RegisterEvent("PLAYER_REGEN_ENABLED")
     delayedImport:SetScript("OnEvent", function()
@@ -485,14 +485,14 @@ local function ImportNow(data, children, target, sender, callbackFunc)
   Private.OpenSharedMacroWithData(data)
 
   -- if Private.LoadOptions() then
-  --   if not MacroMicro.IsOptionsOpen() then
-  --     MacroMicro.OpenOptions()
+  --   if not MacroManager.IsOptionsOpen() then
+  --     MacroManager.OpenOptions()
   --   end
   --   Private.OpenUpdate(data, children, target, sender, callbackFunc)
   -- end
 end
 
-function MacroMicro.Import(inData, target, callbackFunc)
+function MacroManager.Import(inData, target, callbackFunc)
   local data, children, version
   if type(inData) == 'string' then
     -- encoded data
@@ -500,7 +500,7 @@ function MacroMicro.Import(inData, target, callbackFunc)
     if type(received) == 'string' then
       -- this is probably an error message from LibDeflate. Display it.
       ShowTooltip{
-        {1, "MacroMicro", 0.5333, 0, 1},
+        {1, "MacroManager", 0.5333, 0, 1},
         {1, received, 1, 0, 0, 1}
       }
       return nil, received
@@ -558,7 +558,7 @@ function RequestDisplay(characterName, displayName)
     d = displayName
   };
   local transmitString = TableToString(transmit);
-  crossRealmSendCommMessage("MacroMicro", transmitString, characterName);
+  crossRealmSendCommMessage("MacroManager", transmitString, characterName);
 end
 
 function TransmitError(errorMsg, characterName)
@@ -566,21 +566,21 @@ function TransmitError(errorMsg, characterName)
     m = "dE",
     eM = errorMsg
   };
-  crossRealmSendCommMessage("MacroMicro", TableToString(transmit), characterName);
+  crossRealmSendCommMessage("MacroManager", TableToString(transmit), characterName);
 end
 
 function TransmitDisplay(id, characterName)
   local encoded = Private.DisplayToString(id);
   if(encoded ~= "") then
-    crossRealmSendCommMessage("MacroMicro", encoded, characterName, "BULK", function(displayName, done, total)
-      crossRealmSendCommMessage("MacroMicroProg", done.." "..total.." "..displayName, characterName, "ALERT");
+    crossRealmSendCommMessage("MacroManager", encoded, characterName, "BULK", function(displayName, done, total)
+      crossRealmSendCommMessage("MacroManagerProg", done.." "..total.." "..displayName, characterName, "ALERT");
     end, id);
   else
     TransmitError("dne", characterName);
   end
 end
 
-Comm:RegisterComm("MacroMicroProg", function(prefix, message, distribution, sender)
+Comm:RegisterComm("MacroManagerProg", function(prefix, message, distribution, sender)
   if distribution == "PARTY" or distribution == "RAID" then
     local dest, msg = string.match(message, "^§§(.+):(.+)$")
     if dest then
@@ -602,7 +602,7 @@ Comm:RegisterComm("MacroMicroProg", function(prefix, message, distribution, send
       local red = min(255, (1 - done / total) * 511)
       local green = min(255, (done / total) * 511)
       ShowTooltip({
-        {2, "MacroMicro", displayName, 0.5, 0, 1, 1, 1, 1},
+        {2, "MacroManager", displayName, 0.5, 0, 1, 1, 1, 1},
         {1, "Receiving display information", 1, 0.82, 0},
         {2, " ", ("|cFF%2x%2x00")..done.."|cFF00FF00/"..total}
       })
@@ -610,7 +610,7 @@ Comm:RegisterComm("MacroMicroProg", function(prefix, message, distribution, send
   end
 end)
 
-Comm:RegisterComm("MacroMicro", function(prefix, message, distribution, sender)
+Comm:RegisterComm("MacroManager", function(prefix, message, distribution, sender)
   if distribution == "PARTY" or distribution == "RAID" then
     local dest, msg = string.match(message, "^§§([^:]+):(.+)$")
     if dest then
@@ -655,19 +655,19 @@ Comm:RegisterComm("MacroMicro", function(prefix, message, distribution, sender)
       tooltipLoading = nil;
       if(received.eM == "dne") then
         ShowTooltip({
-          {1, "MacroMicro", 0.5333, 0, 1},
+          {1, "MacroManager", 0.5333, 0, 1},
           {1, "Requested display does not exist", 1, 0, 0}
         });
       elseif(received.eM == "na") then
         ShowTooltip({
-          {1, "MacroMicro", 0.5333, 0, 1},
+          {1, "MacroManager", 0.5333, 0, 1},
           {1, "Requested display not authorized", 1, 0, 0}
         });
       end
     end
-  elseif(ItemRefTooltip.MacroMicro_Tooltip_Thumbnail and ItemRefTooltip.MacroMicro_Tooltip_Thumbnail:IsVisible()) then
+  elseif(ItemRefTooltip.MacroManager_Tooltip_Thumbnail and ItemRefTooltip.MacroManager_Tooltip_Thumbnail:IsVisible()) then
     ShowTooltip({
-      {1, "MacroMicro", 0.5333, 0, 1},
+      {1, "MacroManager", 0.5333, 0, 1},
       {1, "Transmission error", 1, 0, 0}
     });
   end

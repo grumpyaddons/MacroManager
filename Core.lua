@@ -1,4 +1,4 @@
-local AddonName, Private = ...
+local AddonName, Private = ...;
 
 local AceGUI = LibStub("AceGUI-3.0");
 
@@ -13,7 +13,6 @@ local scrollStatusTable = {
 };
 
 local frameStatusTable = {};
-local iconPickerFrameStatusTable = {};
 
 local macroTree = nil;
 local macroTreeStatusTable = {};
@@ -65,7 +64,7 @@ StaticPopupDialogs["DELETE_MACRO"] = {
     OnAccept = function(self, macroId)
         DeleteMacro(self.macroId);
         macroTree:SelectByValue("new");
-        ShowMacroMicro();
+        ShowMacroManager();
         RefreshMacroFormBasedonSelectedTreeItem();
     end,
     timeout = 0,
@@ -84,7 +83,7 @@ StaticPopupDialogs["DELETE_MACRO"] = {
   }
 
 function Private.OpenSharedMacroWithData(data)
-    ShowMacroMicro()
+    ShowMacroManager()
     macroTree:SelectByValue("new");
     Private.OpenSharedMacro(sharedMacroLabel, data);
 end
@@ -150,12 +149,6 @@ function CreateSeparatorLabel()
     local label = AceGUI:Create("Label");
     label:SetText(" ");
     return label;
-end
-
-function CreateSeparatorLabel()
-    local label = AceGUI:Create("Label");
-    label:SetText(" ");
-    return label
 end
 
 function GenerateMacroTree()
@@ -225,7 +218,7 @@ function Show_Options()
     frame:SetStatusTable(frameStatusTable);
     -- Setting the frame to high as it was above the delete macro dialog box
     frame.frame:SetFrameStrata("HIGH");
-    frame:SetTitle("MacroMicro");
+    frame:SetTitle("MacroManager");
     frame:SetCallback("OnClose", function(widget)
         if iconPicker then
             iconPicker:Hide();
@@ -236,10 +229,10 @@ function Show_Options()
 
     -- Close on escape taken from https://stackoverflow.com/a/61215014
     -- Add the frame as a global variable under the name `MyGlobalFrameName`
-    _G["MacroMicroFrame"] = frame.frame
+    _G["MacroManagerFrame"] = frame.frame
     -- Register the global variable `MyGlobalFrameName` as a "special frame"
     -- so that it is closed when the escape key is pressed.
-    tinsert(UISpecialFrames, "MacroMicroFrame")
+    tinsert(UISpecialFrames, "MacroManagerFrame")
 
     local macroTreeContainer = AceGUI:Create("SimpleGroup");
     macroTreeContainer:SetWidth(500);
@@ -304,7 +297,7 @@ function Show_Options()
         self:SetLabel("Macro Name ("..string.len(macroNameEditBox:GetText()).."/16)");
     end);
 
-    macroBodyEditBox = AceGUI:Create("MacroMicroMultiLineEditBox");
+    macroBodyEditBox = AceGUI:Create("MacroManagerMultiLineEditBox");
     macroBodyEditBox:SetLabel("Macro Body (0/255)");
     macroBodyEditBox:SetRelativeWidth(1);
     macroBodyEditBox:DisableButton(true);
@@ -347,7 +340,7 @@ function Show_Options()
         local options = {
             okayCancel = false
          };
-        iconPicker = lib:CreateIconSelectorWindow("MacroMicroIconPicker", UIParent, options);
+        iconPicker = lib:CreateIconSelectorWindow("MacroManagerIconPicker", UIParent, options);
         iconPicker.iconsFrame:SetScript("OnSelectedIconChanged", function()
             macroIcon:SetImage("Interface\\Icons\\" .. iconPicker.iconsFrame.selectedButton.texture);
         end);
@@ -406,7 +399,7 @@ function Show_Options()
             local isCharacterMacro = editorMacroType == "character";
             -- 134400 is the question mark icon
             local newMacroId = CreateMacro(newName, newIcon, newBody, isCharacterMacro);
-            ShowMacroMicro();
+            ShowMacroManager();
 
             local path = editorMacroType .. "\001" .. newMacroId;
             macroTree:SelectByValue(path);
@@ -424,7 +417,7 @@ function Show_Options()
                 newMacroId = CreateMacro(newName, newIcon, newBody, isCharacterMacro);
             end
 
-            ShowMacroMicro();
+            ShowMacroManager();
             local newMacroType = "account";
             if newMacroId >= 121 then
                 newMacroType = "character";
@@ -512,7 +505,7 @@ function Show_Options()
                     end
                     end
 
-                    editbox:Insert("[MacroMicro: "..fullName.." - "..macroName.."]");
+                    editbox:Insert("[MacroManager: "..fullName.." - "..macroName.."]");
                     Private.linked = Private.linked or {}
                     Private.linked[macroName] = GetTime()
                 end
@@ -526,13 +519,13 @@ function Show_Options()
 end
 
 SlashCmdList["MACROMICRO"] = function()
-    ShowMacroMicro()
+    ShowMacroManager()
 end
 SLASH_MACROMICRO1 = "/macromanager";
-SLASH_MACROMICRO2 = "/macromicro";
+SLASH_MACROMICRO2 = "/macromanager";
 SLASH_MACROMICRO2 = "/mm";
 
-function ShowMacroMicro() 
+function ShowMacroManager() 
     if frame and frame:IsVisible() then
         frame.frame:Hide();
     end
@@ -541,7 +534,7 @@ end
 
 -- save memory by only loading FileData when needed
 function LoadFileData()
-    local addon = "MacroMicroData";
+    local addon = "MacroManagerData";
     if not Private.FileData then
         local loaded, reason = LoadAddOn(addon)
         if not loaded then
@@ -553,7 +546,7 @@ function LoadFileData()
             end
         end
         local fd = _G[addon]
-        Private.FileData = MacroMicro.IsRetail() and fd:GetFileDataRetail() or fd:GetFileDataClassic()
+        Private.FileData = MacroManager.IsRetail() and fd:GetFileDataRetail() or fd:GetFileDataClassic()
     end
 end
 

@@ -1,5 +1,5 @@
 -- Copied from the AceGUI source and modified for MacroMacro
-local Type, Version = "MacroMicroMultiLineEditBox", 1
+local Type, Version = "MacroManagerMultiLineEditBox", 1
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
@@ -19,7 +19,7 @@ local _G = _G
 Support functions
 -------------------------------------------------------------------------------]]
 
----- The only functionality we're trying to get rid of for MacroMicro is the ChatEdit_InsertLink hook.
+---- The only functionality we're trying to get rid of for MacroManager is the ChatEdit_InsertLink hook.
 -- if not AceGUIMultiLineEditBoxInsertLink then
 -- 	-- upgradeable hook
 -- 	hooksecurefunc("ChatEdit_InsertLink", function(...) return _G.AceGUIMultiLineEditBoxInsertLink(...) end)
