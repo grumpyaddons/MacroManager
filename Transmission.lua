@@ -1,3 +1,5 @@
+--!! Copied from WeakAuras source code !!--
+
 --[[ Transmisson.lua
 This file contains all transmission related functionality, e.g. import/export and chat links.
 For that it hooks into the chat frame and addon message channels.

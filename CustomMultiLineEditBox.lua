@@ -20,6 +20,8 @@ Support functions
 -------------------------------------------------------------------------------]]
 
 ---- The only functionality we're trying to get rid of for MacroManager is the ChatEdit_InsertLink hook.
+---- That's because we want to intercept the insert to prefix /equip or /cast for items/spells.
+---- This mimics the default behavior of the Macro UI.
 -- if not AceGUIMultiLineEditBoxInsertLink then
 -- 	-- upgradeable hook
 -- 	hooksecurefunc("ChatEdit_InsertLink", function(...) return _G.AceGUIMultiLineEditBoxInsertLink(...) end)
