@@ -482,7 +482,7 @@ local function ImportNow(data, children, target, sender, callbackFunc)
     return
   end
 
-  Private.OpenSharedMacroWithData(data)
+  Private.main.OpenSharedMacroWithData(data)
 
   -- if Private.LoadOptions() then
   --   if not MacroManager.IsOptionsOpen() then

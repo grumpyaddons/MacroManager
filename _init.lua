@@ -1,4 +1,4 @@
-local AddonName, Private = ...;
+local _, Private = ...;
 
 MacroManager = {}
 
@@ -19,3 +19,5 @@ end
 function AddonObject:OnDisable()
     -- Called when the addon is disabled
 end
+
+Private.Addon = MacroManager;

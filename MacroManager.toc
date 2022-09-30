@@ -8,7 +8,14 @@
 embeds.xml
 
 _init.lua
-Core.lua
+
+main.lua
+Helpers.lua
+Layout\MacroEditor.lua
+Layout\MacroTree.lua
+Layout\Window.lua
+
+
 CustomMultiLineEditBox.lua
 
 Transmission.lua
