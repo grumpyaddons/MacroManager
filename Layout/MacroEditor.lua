@@ -49,16 +49,16 @@ StaticPopupDialogs["DELETE_MACRO"] = {
     whileDead = true,
     hideOnEscape = true,
     preferredIndex = 5
-  }
+};
 
-  StaticPopupDialogs["MACRO_SAVE_ERROR"] = {
+StaticPopupDialogs["MACRO_SAVE_ERROR"] = {
     text = "Couldn't save macro. %s",
     button1 = "Okay",
     timeout = 0,
     whileDead = true,
     hideOnEscape = true,
     preferredIndex = 3,
-  }
+};
 
 function MacroEditor.SetOnMacroSaveCallback(OnMacroSaveCallback)
     MacroEditor.OnMacroSaveCallback = OnMacroSaveCallback;

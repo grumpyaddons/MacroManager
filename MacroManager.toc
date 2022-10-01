@@ -12,9 +12,9 @@ _init.lua
 main.lua
 Helpers.lua
 Layout\MacroEditor.lua
+Layout\MacroEditor_ChatEdit_InsertLink.lua
 Layout\MacroTree.lua
 Layout\Window.lua
-
 
 CustomMultiLineEditBox.lua
 
