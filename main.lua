@@ -69,6 +69,9 @@ function main.WireUpWidgets()
 end
 
 function main.OpenSharedMacroWithData(data)
+    -- Toggle and show in case the window hasn't been opened at least once.
+    main.ToggleWindow();
+    main.ShowWindow();
     Private.Layout.MacroTree.SelectNewMacro();
     Private.Layout.MacroEditor.SetNewMode(data.macroName, data.macroIcon, data.macroBody);
 end
