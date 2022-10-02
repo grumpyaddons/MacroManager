@@ -292,11 +292,11 @@ function MacroEditor.Create()
         -- you will not be able to use "#showtooltip" in that same macro and instead
         -- you need to recreate the macro. I don't know if people deal with this a lot,
         -- but this if statement basically fixes that scenario by allowing you to use
-        -- "#showtooltip" again. Overall an improvement albiet simple one.
+        -- "#showtooltip" again. Overall an improvement albeit a simple one.
         -- HOWEVER, I survyed like 10 people and that didn't seem like much of an issue
         -- and if I modified the behavior from the default macro UI, people might be confused.
         -- Therefore, I'm going to comment this out for now but keep it because I spent
-        -- too much time figuring it out and I might bring it back
+        -- too much time figuring it out and I might bring it back.
         --
         -- if string.find(newBody, "#showtooltip") then
         --     newIcon = "INV_MISC_QUESTIONMARK";
@@ -321,7 +321,7 @@ function MacroEditor.Create()
             newMacroId = CreateMacro(newName, newIcon, newBody, isCharacterMacro);
             MacroEditor.SetEditMode(newMacroId, newName, newIcon, newBody);
         else
-            -- Was the macro type changed from account to character or vice versa?
+            -- Was the macro type changed from the original value?
             if MacroEditor.selectedMacro.type == Private.Helpers.MacroTypeBasedOnIndex(MacroEditor.selectedMacro.index)
             then
                 -- Macro type hasn't changed, just do an edit macro
@@ -387,10 +387,9 @@ function MacroEditor.Create()
     local shareInfoLabel = AceGUI:Create("Label");
     shareInfoLabel:SetFullWidth(true);
     shareInfoLabel:SetText(
-        "To share a macro, shift-click it in the left menu while your chat box is open. " ..
-        "Similar to how WeakAuras are shared. Both users must have MacroManger installed for sharing to work."
+        "To share a macro, shift-click it in the left menu while your chat box is open." ..
+        "Similar to how WeakAuras are shared.\n\nBoth users must have MacroManger installed for sharing to work."
     );
-    scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(shareInfoLabel);
 
