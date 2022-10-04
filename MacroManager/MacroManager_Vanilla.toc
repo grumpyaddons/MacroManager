@@ -17,6 +17,7 @@ Layout\Window.lua
 Layout\InterfaceOptions.lua
 
 CustomMultiLineEditBox.lua
+CustomTreeGroup.lua
 
 Transmission.lua
 

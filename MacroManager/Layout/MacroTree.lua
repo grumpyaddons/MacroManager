@@ -113,13 +113,15 @@ function MacroTree.GenerateMacroTree()
         },
         {
             value = "character",
-            text = "Character Macros",
+            text = "Character Macros ("..characterMacroCount.."/18)",
+            font = "GameFontHighlightSmall",
             disabled = true,
             children = characterMacros
         },
         {
             value = "account",
-            text = "Account Macros",
+            text = "Account Macros ("..accountMacroCount.."/120)",
+            font = "GameFontHighlightSmall",
             disabled = true,
             children = accountMacros
         },
@@ -145,12 +147,12 @@ function MacroTree.GenerateMacroTree()
                 local fullName = nil;
                 if(editbox) then
                     if (not fullName) then
-                    local name, realm = UnitFullName("player")
-                    if realm then
-                        fullName = name.."-".. realm
-                    else
-                        fullName = name
-                    end
+                        local name, realm = UnitFullName("player")
+                        if realm then
+                            fullName = name.."-".. realm
+                        else
+                            fullName = name
+                        end
                     end
 
                     editbox:Insert("[MacroManager: "..fullName.." - "..macroName.."]");
@@ -175,7 +177,7 @@ function MacroTree.SetOnSelectedCallback(onSelectedCallback)
 end
 
 function MacroTree.Create()
-    local macroTree = AceGUI:Create("TreeGroup");
+    local macroTree = AceGUI:Create("MacroManagerTreeGroup");
     macroTree:SetLayout("Flow");
 
     -- Expand groups by default
