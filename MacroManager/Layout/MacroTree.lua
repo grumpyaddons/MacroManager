@@ -114,15 +114,15 @@ function MacroTree.GenerateMacroTree()
         {
             value = "character",
             text = "Character Macros ("..characterMacroCount.."/18)",
-            font = "GameFontHighlightSmall",
-            disabled = true,
+            font = "GameFontGreenSmall",
+            selectable = false,
             children = characterMacros
         },
         {
             value = "account",
             text = "Account Macros ("..accountMacroCount.."/120)",
-            font = "GameFontHighlightSmall",
-            disabled = true,
+            font = "GameFontGreenSmall",
+            selectable = false,
             children = accountMacros
         },
     };

@@ -45,7 +45,10 @@ function main.WireUpWidgets()
         if macroType == "new" then
             Private.Layout.MacroEditor.SetNewMode()
         else
-            Private.Layout.MacroEditor.SetEditModeByMacroId(macroId);
+            -- Header rows will have no value for macro ID
+            if macroId then
+                Private.Layout.MacroEditor.SetEditModeByMacroId(macroId);
+            end
         end
     end);
     Private.Layout.MacroEditor.SetOnMacroSaveCallback(function(macroType, macroId)

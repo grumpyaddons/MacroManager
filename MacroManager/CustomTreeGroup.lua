@@ -65,6 +65,7 @@ local function UpdateButton(button, treeline, selected, canExpand, isExpanded)
 	local uniquevalue = treeline.uniquevalue
 	local disabled = treeline.disabled
     local font = treeline.font
+	local selectable = treeline.selectable
 
 	button.treeline = treeline
 	button.value = value
@@ -146,6 +147,7 @@ local function addLine(self, v, tree, level, parent)
 	line.value = v.value
 	line.text = v.text
     line.font = v.font
+	line.selectable = v.selectable
 	line.icon = v.icon
 	line.iconCoords = v.iconCoords
 	line.disabled = v.disabled
@@ -192,6 +194,9 @@ end
 
 local function Button_OnClick(frame)
 	local self = frame.obj
+	print(self.selectable);
+	DevTools_Dump(frame.obj.selectable);
+
 	self:Fire("OnClick", frame.uniquevalue, frame.selected)
 	if not frame.selected then
 		self:SetSelected(frame.uniquevalue)
@@ -327,7 +332,7 @@ local methods = {
 		self.enabletooltips = enable
 	end,
 
-	["CreateButton"] = function(self)
+	["CreateButton"] = function(self, line)
 		local num = AceGUI:GetNextWidgetNum("TreeGroupButton")
 		local button = CreateFrame("Button", ("AceGUI30TreeButton%d"):format(num), self.treeframe, "OptionsListButtonTemplate")
 		button.obj = self
@@ -336,9 +341,14 @@ local methods = {
 		icon:SetWidth(14)
 		icon:SetHeight(14)
 		button.icon = icon
-
-		button:SetScript("OnClick",Button_OnClick)
-		button:SetScript("OnDoubleClick", Button_OnDoubleClick)
+		button.selectable = line.selectable;
+		if line.selectable == nil or line.selectable == true then
+			print(line.value .. " normal click");
+			button:SetScript("OnClick",Button_OnClick)
+		else
+			print(line.value .. " expand click");
+			button:SetScript("OnClick",Button_OnDoubleClick)
+		end
 		button:SetScript("OnEnter",Button_OnEnter)
 		button:SetScript("OnLeave",Button_OnLeave)
 
@@ -486,7 +496,7 @@ local methods = {
 			local line = lines[i]
 			local button = buttons[buttonnum]
 			if not button then
-				button = self:CreateButton()
+				button = self:CreateButton(line)
 
 				buttons[buttonnum] = button
 				button:SetParent(treeframe)
@@ -529,9 +539,13 @@ local methods = {
 		for i = 1, #path do
 			groups[tconcat(path, "\001", 1, i)] = true
 		end
-		status.selected = uniquevalue
+		if self.selectable == nil or self.selectable == true then
+			print(uniquevalue);
+			print(self.selectable);
+			status.selected = uniquevalue
+			self:Fire("OnGroupSelected", uniquevalue)
+		end
 		self:RefreshTree(true)
-		self:Fire("OnGroupSelected", uniquevalue)
 	end,
 
 	["SelectByPath"] = function(self, ...)
