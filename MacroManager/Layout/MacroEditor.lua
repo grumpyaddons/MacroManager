@@ -283,6 +283,13 @@ function MacroEditor.Create()
         local newBody = macroBodyEditBox:GetText();
         local newIcon = macroIcon.image:GetTexture();
 
+        -- 134400 is the ID for the question mark icon. But the macro API
+        -- will only support #showtooltip if you save the macro with this string value
+        if newIcon == 134400 then
+            newIcon = "INV_MISC_QUESTIONMARK";
+        end
+
+
         -- Stay a while and listen.
         -- This if statement is needed for a convoluted reason.
         -- By convention if you pass "INV_MISC_QUESTIONMARK" to the EditMacro command,
@@ -301,6 +308,7 @@ function MacroEditor.Create()
         -- if string.find(newBody, "#showtooltip") then
         --     newIcon = "INV_MISC_QUESTIONMARK";
         -- end
+
         local newMacroId;
         if MacroEditor.mode == "new" then
             if MacroEditor.selectedMacro.type == "character" and characterMacroCount == 18 then
@@ -317,7 +325,6 @@ function MacroEditor.Create()
                 return
             end
             local isCharacterMacro = MacroEditor.selectedMacro.type == "character";
-
             newMacroId = CreateMacro(newName, newIcon, newBody, isCharacterMacro);
             MacroEditor.SetEditMode(newMacroId, newName, newIcon, newBody);
         else
