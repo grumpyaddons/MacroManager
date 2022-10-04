@@ -1,8 +1,7 @@
 ## Interface: 11403
 ## Title: MacroManager
-## Notes: Some notes about this addon.
-## Author: Your Name Here
-## Version: 0.1
+## Author: Grrumpy <Coldblooded> - Faerlina (US)
+## Version: 1.0.0-beta
 ## SavedVariables: MacroManagerSaved
 
 embeds.xml
@@ -16,7 +15,6 @@ Layout\MacroEditor_ChatEdit_InsertLink.lua
 Layout\MacroTree.lua
 Layout\Window.lua
 Layout\InterfaceOptions.lua
-
 
 CustomMultiLineEditBox.lua
 
