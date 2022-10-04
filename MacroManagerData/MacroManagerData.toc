@@ -1,4 +1,4 @@
-## Interface: 90200
+## Interface: 90207
 ## Version: v1.7.2
 ## Title: MacroManagerData
 ## Author: Xinhuan, Ketho

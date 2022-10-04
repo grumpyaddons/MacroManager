@@ -3,10 +3,9 @@ local _, Private = ...;
 -- Contain accessing undefined variables to one place to remove linter warnings.
 local InterfaceOptions_AddCategory, CreateFrame, CloseWindows = InterfaceOptions_AddCategory, CreateFrame, CloseWindows;
 
-
-local panel = CreateFrame("Frame")
-panel.name = "MacroManager"
-InterfaceOptions_AddCategory(panel)
+local panel = CreateFrame("Frame");
+panel.name = "MacroManager";
+InterfaceOptions_AddCategory(panel);
 
 local title = panel:CreateFontString("ARTWORK", nil, "GameFontNormalLarge");
 title:SetPoint("TOPLEFT", 10, -15);
@@ -22,8 +21,8 @@ button:SetScript("OnClick", function()
 end)
 
 local instructions = panel:CreateFontString("ARTWORK", nil, "GameFontWhite");
-instructions:SetJustifyH("LEFT")
-instructions:SetJustifyV("TOP")
+instructions:SetJustifyH("LEFT");
+instructions:SetJustifyV("TOP");
 instructions:SetPoint("TOPLEFT", button, 5, -35);
 instructions:SetText([[
 Type `/mm` or `/macromanager` to open the MacroManager UI.
