@@ -382,6 +382,7 @@ function MacroEditor.Create()
     scroll:AddChild(macroBodyEditBox);
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(saveButton);
+    scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(deleteButton);
 
     local shareInfoLabel = AceGUI:Create("Label");
