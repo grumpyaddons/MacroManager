@@ -1,24 +1,35 @@
 # Usage: psake default.ps1 Package
-$macroManagerFolderPath = 'C:\Program Files (x86)\World of Warcraft\_classic_\Interface\AddOns\MacroManager';
-$macroManagerDataFolderPath = 'C:\Program Files (x86)\World of Warcraft\_classic_\Interface\AddOns\MacroManagerData';
+$classicAddonsPath = "C:\Program Files (x86)\World of Warcraft\_classic_\Interface\AddOns"
+$classicMacroManagerPath = "$classicAddonsPath\MacroManager"
+$classicMacroManagerDataPath = "$classicAddonsPath\MacroManagerData"
+
+$retailAddonsPath = "D:\wow-retail\World of Warcraft\_retail_\Interface\AddOns"
+$retailMacroManagerPath = "$retailAddonsPath\MacroManager"
+$retailMacroManagerDataPath = "$retailAddonsPath\MacroManagerData"
+
 
 Task Package {
     Compress-Archive -Path MacroManager,MacroManagerData -DestinationPath package.zip
 }
 
-Task PublishToLocalWoW {
-    
-    if (Test-Path $macroManagerFolderPath) {
-        Remove-Item $macroManagerFolderPath -Recurse -Force
+Task SymlinkForDev {
+    # Classic
+    if (Test-Path $classicMacroManagerPath) {
+        (Get-Item $classicMacroManagerPath).Delete()
     }
-
-    if (Test-Path $macroManagerDataFolderPath) {
-        Remove-Item $macroManagerDataFolderPath -Recurse -Force
+    if (Test-Path $classicMacroManagerDataPath) {
+        (Get-Item $classicMacroManagerDataPath).Delete()
     }
+    New-Item -ItemType SymbolicLink -Path $classicMacroManagerPath -Target "$pwd\MacroManager"
+    New-Item -ItemType SymbolicLink -Path $classicMacroManagerDataPath -Target "$pwd\MacroManagerData"
 
-    Copy-Item '.\MacroManager' 'C:\Program Files (x86)\World of Warcraft\_classic_\Interface\AddOns' -Recurse
-    Copy-Item '.\MacroManagerData' 'C:\Program Files (x86)\World of Warcraft\_classic_\Interface\AddOns' -Recurse
+    # Retail
+    if (Test-Path $retailMacroManagerPath) {
+        (Get-Item $retailMacroManagerPath).Delete()
+    }
+    if (Test-Path $retailMacroManagerDataPath) {
+        (Get-Item $retailMacroManagerDataPath).Delete()
+    }
+    New-Item -ItemType SymbolicLink -Path $retailMacroManagerPath -Target "$pwd\MacroManager"
+    New-Item -ItemType SymbolicLink -Path $retailMacroManagerDataPath -Target "$pwd\MacroManagerData"
 }
-
-# Dev symlink to local WoW install
-# cmd /c mklink /d $macroManagerFolderPath "./MacroManager"
