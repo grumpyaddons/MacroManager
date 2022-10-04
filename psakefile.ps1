@@ -9,7 +9,7 @@ $retailMacroManagerDataPath = "$retailAddonsPath\MacroManagerData"
 
 
 Task Package {
-    Compress-Archive -Path MacroManager,MacroManagerData -DestinationPath package.zip
+    Compress-Archive -Path MacroManager,MacroManagerData -DestinationPath package.zip -Force
 }
 
 Task SymlinkForDev {

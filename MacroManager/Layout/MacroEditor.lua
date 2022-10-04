@@ -289,7 +289,6 @@ function MacroEditor.Create()
             newIcon = "INV_MISC_QUESTIONMARK";
         end
 
-
         -- Stay a while and listen.
         -- This if statement is needed for a convoluted reason.
         -- By convention if you pass "INV_MISC_QUESTIONMARK" to the EditMacro command,
