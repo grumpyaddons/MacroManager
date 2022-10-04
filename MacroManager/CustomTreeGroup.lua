@@ -39,7 +39,7 @@ do
 	end
 end
 
-local DEFAULT_TREE_WIDTH = 175
+local DEFAULT_TREE_WIDTH = 190
 local DEFAULT_TREE_SIZABLE = true
 
 --[[-----------------------------------------------------------------------------
@@ -608,6 +608,7 @@ local methods = {
 		self.dragger:EnableMouse(resizable)
 
 		local status = self.status or self.localstatus
+
 		status.treewidth = treewidth
 		status.treesizable = resizable
 
