@@ -1,7 +1,7 @@
 local _, Private = ...;
 
 -- Contain accessing undefined variables to one place to remove linter warnings.
-local GetMacroInfo, GetNumMacros = GetMacroInfo, GetNumMacros;
+local GetMacroInfo, GetNumMacros, PickupMacro = GetMacroInfo, GetNumMacros, PickupMacro;
 local GetTime, GetCurrentKeyBoardFocus, IsShiftKeyDown, UnitFullName = GetTime, GetCurrentKeyBoardFocus, IsShiftKeyDown, UnitFullName;
 local LibStub = LibStub;
 
@@ -138,6 +138,14 @@ function MacroTree.GenerateMacroTree()
 
     for i=1, buttonCount do
         local previousOnClick = MacroTree.container.buttons[i]:GetScript("OnClick");
+
+        MacroTree.container.buttons[i]:RegisterForDrag("LeftButton")
+        MacroTree.container.buttons[i]:SetScript("OnDragStart", function(self)
+            local macroType, macroId = MacroTree.GetMacroTypeAndMacroIdFromUniqueValue(self.uniquevalue);
+            if macroType ~= "new" then
+                PickupMacro(macroId);
+            end
+        end);
 
         MacroTree.container.buttons[i]:SetScript("OnClick", function(self)
             if (IsShiftKeyDown()) then
