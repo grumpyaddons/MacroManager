@@ -1,4 +1,4 @@
---!! Copied from WeakAuras source code !!--
+--!! Copied from WeakAuras source code. License at WeakAuras_LICENSE.txt !!--
 
 --[[ Transmisson.lua
 This file contains all transmission related functionality, e.g. import/export and chat links.
