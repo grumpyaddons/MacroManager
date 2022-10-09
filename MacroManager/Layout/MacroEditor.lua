@@ -250,8 +250,8 @@ function MacroEditor.Create()
     iconLabel:SetFontObject(GameFontNormalSmall);
 
     local changeIconButton = AceGUI:Create("Button");
-    changeIconButton:SetText("Change");
-    changeIconButton:SetWidth(100);
+    changeIconButton:SetText("Select Icon");
+    changeIconButton:SetWidth(125);
     changeIconButton:SetCallback("OnClick", function()
         MacroEditor.LoadIconPickerData();
         local lib = LibStub("LibAdvancedIconSelector-1.0-LMIS")    -- (ideally, this would be loaded on-demand)
@@ -268,6 +268,14 @@ function MacroEditor.Create()
         MacroEditor.iconPicker:SetPoint("TOP", Private.Layout.Window.container.frame, "TOP");
         MacroEditor.iconPicker:SetPoint("LEFT", Private.Layout.Window.container.frame, "RIGHT");
         MacroEditor.iconPicker:Show();
+    end);
+
+    local useQuestionMarkIconButton = AceGUI:Create("Button");
+    useQuestionMarkIconButton:SetText("Reset Icon (?)");
+    useQuestionMarkIconButton:SetWidth(125);
+    useQuestionMarkIconButton:SetCallback("OnClick", function()
+        macroIcon:SetImage("INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK");
+        MacroEditor.selectedMacro.iconModified = true;
     end);
 
     local saveButton = AceGUI:Create("Button");
@@ -393,6 +401,7 @@ function MacroEditor.Create()
     scroll:AddChild(iconLabel);
     scroll:AddChild(macroIcon);
     scroll:AddChild(changeIconButton);
+    scroll:AddChild(useQuestionMarkIconButton);
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(macroBodyEditBox);
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
