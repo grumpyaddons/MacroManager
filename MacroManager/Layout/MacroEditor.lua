@@ -80,7 +80,8 @@ function MacroEditor.SetEditMode(macroId, macroName, macroIcon, macroBody)
         type = Private.Helpers.MacroTypeBasedOnIndex(macroId),
         name = macroName,
         icon = macroIcon,
-        body = macroBody
+        body = macroBody,
+        iconModified = false
     };
 
     MacroEditor.RefreshWidgets();
@@ -94,7 +95,8 @@ function MacroEditor.SetNewMode(macroName, macroIcon, macroBody)
         type = "character",
         name = macroName,
         icon = macroIcon,
-        body = macroBody
+        body = macroBody,
+        iconModified = false
     };
     MacroEditor.RefreshWidgets();
 end
@@ -261,6 +263,7 @@ function MacroEditor.Create()
         end
         MacroEditor.iconPicker.iconsFrame:SetScript("OnSelectedIconChanged", function()
             macroIcon:SetImage("Interface\\Icons\\" .. MacroEditor.iconPicker.iconsFrame.selectedButton.texture);
+            MacroEditor.selectedMacro.iconModified = true;
         end);
         MacroEditor.iconPicker:SetPoint("TOP", Private.Layout.Window.container.frame, "TOP");
         MacroEditor.iconPicker:SetPoint("LEFT", Private.Layout.Window.container.frame, "RIGHT");
@@ -327,6 +330,12 @@ function MacroEditor.Create()
             newMacroId = CreateMacro(newName, newIcon, newBody, isCharacterMacro);
             MacroEditor.SetEditMode(newMacroId, newName, newIcon, newBody);
         else
+            -- Only use the selected icon image if the icon was modified.
+            -- Otherwise set the new icon to nil so that it doesn't override the existing icon of the macro.
+            if not MacroEditor.selectedMacro.iconModified then
+                newIcon = nil;
+            end
+
             -- Was the macro type changed from the original value?
             if MacroEditor.selectedMacro.type == Private.Helpers.MacroTypeBasedOnIndex(MacroEditor.selectedMacro.index)
             then

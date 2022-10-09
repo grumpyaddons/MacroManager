@@ -1,3 +1,6 @@
+## v0.0.5
+- Fixed issue with save macro using the icon inferred from the first save macro on subsequent saves.
+
 ## v0.0.4
 - You can drag macro buttons from the macro tree to your action bar
 
