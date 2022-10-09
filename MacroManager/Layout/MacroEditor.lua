@@ -413,7 +413,7 @@ function MacroEditor.Create()
     shareInfoLabel:SetFullWidth(true);
     shareInfoLabel:SetText(
         "To share a macro, shift-click it in the left menu while your chat box is open. " ..
-        "Similar to how WeakAuras are shared.\n\nBoth users must have MacroManger installed for sharing to work."
+        "Similar to how WeakAuras are shared.\n\nBoth users must have MacroManager installed for sharing to work."
     );
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(shareInfoLabel);
