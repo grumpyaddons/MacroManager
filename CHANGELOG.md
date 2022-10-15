@@ -1,11 +1,14 @@
-## v0.0.5
+#### v0.0.6
+- Fixed issue with changing a macro type to a type that you already have max amount of.
+
+#### v0.0.5
 - Fixed issue with save macro using the icon inferred from the first save macro on subsequent saves.
 - Add button to reset icon to question mark (?).
 
-## v0.0.4
+#### v0.0.4
 - You can drag macro buttons from the macro tree to your action bar
 
-## v0.0.3
+#### v0.0.3
 - Shows total number of character and account macros
 - Add an interface options panel in case people get lost
 - Fixes out-of-date addon warning

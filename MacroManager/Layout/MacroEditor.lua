@@ -352,6 +352,21 @@ function MacroEditor.Create()
             else
                 -- Macro type changed, delete and add new macro because macro API
                 -- doesn't support editing macro type.
+                -- But first, check to make sure you can create new macros of tha type.
+                if MacroEditor.selectedMacro.type == "character" and characterMacroCount == 18 then
+                    StaticPopup_Show(
+                        "MACRO_SAVE_ERROR",
+                        "You can only have 18 character macros. Delete one before creating a new one."
+                    );
+                    return
+                elseif MacroEditor.selectedMacro.type == "account" and accountMacroCount == 120 then
+                    StaticPopup_Show(
+                        "MACRO_SAVE_ERROR",
+                        "You can only have 120 account macros. Delete one before creating a new one."
+                    );
+                    return
+                end
+
                 DeleteMacro(MacroEditor.selectedMacro.index);
                 local isCharacterMacro = MacroEditor.selectedMacro.type == "character";
                 newMacroId = CreateMacro(newName, newIcon, newBody, isCharacterMacro);
