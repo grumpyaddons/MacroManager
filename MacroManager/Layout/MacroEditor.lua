@@ -338,15 +338,15 @@ function MacroEditor.Create()
             newMacroId = CreateMacro(newName, newIcon, newBody, isCharacterMacro);
             MacroEditor.SetEditMode(newMacroId, newName, newIcon, newBody);
         else
-            -- Only use the selected icon image if the icon was modified.
-            -- Otherwise set the new icon to nil so that it doesn't override the existing icon of the macro.
-            if not MacroEditor.selectedMacro.iconModified then
-                newIcon = nil;
-            end
-
             -- Was the macro type changed from the original value?
             if MacroEditor.selectedMacro.type == Private.Helpers.MacroTypeBasedOnIndex(MacroEditor.selectedMacro.index)
             then
+                -- Only use the selected icon image if the icon was modified.
+                -- Otherwise set the new icon to nil so that it doesn't override the existing icon of the macro.
+                if not MacroEditor.selectedMacro.iconModified then
+                    newIcon = nil;
+                end
+
                 -- Macro type hasn't changed, just do an edit macro
                 newMacroId = EditMacro(MacroEditor.selectedMacro.index, newName, newIcon, newBody);
             else
@@ -367,9 +367,12 @@ function MacroEditor.Create()
                     return
                 end
 
-                DeleteMacro(MacroEditor.selectedMacro.index);
                 local isCharacterMacro = MacroEditor.selectedMacro.type == "character";
                 newMacroId = CreateMacro(newName, newIcon, newBody, isCharacterMacro);
+                -- Do a create THEN a delete so that if the create fails we don't delete
+                -- the macro. If we do a delete first then a create and the create fails
+                -- we lose the macro.
+                DeleteMacro(MacroEditor.selectedMacro.index);
             end
             MacroEditor.SetEditMode(newMacroId, newName, newIcon, newBody);
         end

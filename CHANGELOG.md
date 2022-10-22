@@ -1,3 +1,6 @@
+#### v0.0.7
+- Fixed issue where macros were getting deleted when changing the type if the icon wasn't changed.
+
 #### v0.0.6
 - Fixed issue with changing a macro type to a type that you already have max amount of.
 
