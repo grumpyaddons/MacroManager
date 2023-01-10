@@ -265,6 +265,7 @@ function MacroEditor.Create()
             macroIcon:SetImage("Interface\\Icons\\" .. MacroEditor.iconPicker.iconsFrame.selectedButton.texture);
             MacroEditor.selectedMacro.iconModified = true;
         end);
+        MacroEditor.iconPicker:ClearAllPoints();
         MacroEditor.iconPicker:SetPoint("TOP", Private.Layout.Window.container.frame, "TOP");
         MacroEditor.iconPicker:SetPoint("LEFT", Private.Layout.Window.container.frame, "RIGHT");
         MacroEditor.iconPicker:Show();

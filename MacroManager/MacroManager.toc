@@ -1,4 +1,4 @@
-## Interface: 90207
+## Interface: 100002
 ## Title: MacroManager
 ## Author: Grrumpy <Coldblooded> - Faerlina (US)
 ## Version: 0.0.7
