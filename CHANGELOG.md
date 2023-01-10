@@ -1,3 +1,8 @@
+#### v0.0.8
+- Fixed issues with icon picker in Retail.
+- Known issues:
+    - Selecting an icon in the icon picker will show a black icon on the button
+
 #### v0.0.7
 - Fixed issue where macros were getting deleted when changing the type if the icon wasn't changed.
 
