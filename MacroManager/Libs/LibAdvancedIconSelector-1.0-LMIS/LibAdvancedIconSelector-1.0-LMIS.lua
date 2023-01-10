@@ -272,7 +272,11 @@ function IconSelectorWindow:Create(name, parent, options)
 	self:Hide()
 	self:SetFrameStrata("MEDIUM")
 	self:SetSize(options.width, options.height)
-	self:SetMinResize(options.minResizeWidth, options.minResizeHeight)
+	if self.SetResizeBounds then -- WoW 10.0
+		self:SetResizeBounds(options.minResizeWidth, options.minResizeHeight)
+	else
+		self:SetMinResize(options.minResizeWidth, options.minResizeHeight)
+	end
 	self:SetToplevel(true)
 	self.options = options
 
@@ -531,7 +535,11 @@ function IconSelectorFrame:Create(name, parent, options)
 		for i = 1, #self.icons do
 			local button = self.icons[i]
 			if button then
-				button:SetNormalTexture(nil)
+				if button.ClearNormalTexture then -- WoW Retail 10
+					button:ClearNormalTexture()
+				else
+					button:SetNormalTexture(nil)
+				end
 			end
 		end
 	end)
@@ -829,8 +837,11 @@ function IconSelectorFrame.private_OnInternalFrameSizeChanged(internalFrame, wid
 	for i = self.iconsY * self.iconsX + 1, #self.icons do
 		local button = self.icons[i]
 		if button then
-			button:SetNormalTexture(nil)
-			button:Hide()
+			if button.ClearNormalTexture then -- WoW Retail 10
+				button:ClearNormalTexture()
+			else
+				button:SetNormalTexture(nil)
+			end
 		end
 	end
 	
@@ -907,7 +918,11 @@ function IconSelectorFrame:private_UpdateIcons()
 				if button.texture then
 					button:SetNormalTexture("Interface\\Icons\\" .. button.texture)
 				else
-					button:SetNormalTexture(nil)
+					if button.ClearNormalTexture then -- WoW Retail 10
+						button:ClearNormalTexture()
+					else
+						button:SetNormalTexture(nil)
+					end
 				end
 
 				-- Hook for the icon keyword editor (IKE) overlay
