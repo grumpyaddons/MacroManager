@@ -1,3 +1,6 @@
+#### v0.0.9
+- Update API version.
+
 #### v0.0.8
 - Fixed issues with icon picker in Retail.
 - Known issues:
