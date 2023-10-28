@@ -256,7 +256,8 @@ function MacroEditor.Create()
         MacroEditor.LoadIconPickerData();
         local lib = LibStub("LibAdvancedIconSelector-1.0-LMIS")    -- (ideally, this would be loaded on-demand)
         local options = {
-            okayCancel = false
+            okayCancel = false,
+            keywordAddonName = "MacroManagerData"
          };
         if not MacroEditor.iconPicker then
             MacroEditor.iconPicker = lib:CreateIconSelectorWindow("MacroManagerIconPicker", UIParent, options);
