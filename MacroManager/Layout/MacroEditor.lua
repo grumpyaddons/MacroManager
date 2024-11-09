@@ -7,6 +7,10 @@ local GameFontNormalSmall = GameFontNormalSmall;
 local LibStub = LibStub;
 local UIParent = UIParent;
 
+if C_AddOns.LoadAddOn then
+    LoadAddOn = C_AddOns.LoadAddOn
+end
+
 local AceGUI = LibStub("AceGUI-3.0");
 
 local MacroEditor = {

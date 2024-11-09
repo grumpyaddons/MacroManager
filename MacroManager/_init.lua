@@ -9,11 +9,12 @@ function MacroManager.IsRetail()
 end
 
 function AddonObject:OnInitialize()
-    -- Code that you want to run when the addon is first loaded goes here.
-  end
+    MacroManagerSaved = MacroManagerSaved or { };
+    MacroManagerSaved.MacroManagerWindow = MacroManagerSaved.MacroManagerWindow or { }
+    MacroManagerSaved.MacroManagerWindow.statusTable = MacroManagerSaved.MacroManagerWindow.statusTable or { }
+end
 
 function AddonObject:OnEnable()
-    MacroManagerSaved = MacroManagerSaved or {};
 end
 
 function AddonObject:OnDisable()

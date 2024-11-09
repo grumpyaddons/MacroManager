@@ -5,7 +5,13 @@ local InterfaceOptions_AddCategory, CreateFrame, CloseWindows = InterfaceOptions
 
 local panel = CreateFrame("Frame");
 panel.name = "MacroManager";
-InterfaceOptions_AddCategory(panel);
+
+if InterfaceOptions_AddCategory then
+   InterfaceOptions_AddCategory(panel);
+else
+   local category, layout = _G.Settings.RegisterCanvasLayoutCategory(panel, panel.name)
+   _G.Settings.RegisterAddOnCategory(category)
+end
 
 local title = panel:CreateFontString("ARTWORK", nil, "GameFontNormalLarge");
 title:SetPoint("TOPLEFT", 10, -15);

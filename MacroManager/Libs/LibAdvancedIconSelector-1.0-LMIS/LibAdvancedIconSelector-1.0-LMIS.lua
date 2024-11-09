@@ -38,6 +38,16 @@ if DEBUG and LibDebug then LibDebug() end
 local MAJOR_VERSION = "LibAdvancedIconSelector-1.0-LMIS"
 local MINOR_VERSION = 14			-- (do not call GetAddOnMetaData)
 
+local GetAddOnMetadata = GetAddOnMetadata
+if C_AddOns.GetAddOnMetadata then
+	GetAddOnMetadata = C_AddOns.GetAddOnMetadata
+end
+
+local GetAddOnInfo = GetAddOnInfo
+if C_AddOns.GetAddOnInfo then
+	GetAddOnInfo = C_AddOns.GetAddOnInfo
+end
+
 if not LibStub then error(MAJOR_VERSION .. " requires LibStub to operate") end
 local lib = LibStub:NewLibrary(MAJOR_VERSION, MINOR_VERSION)
 if not lib then return end
