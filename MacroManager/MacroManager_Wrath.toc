@@ -1,4 +1,4 @@
-## Interface: 30401
+## Interface: 30403
 ## Title: MacroManager
 ## Author: Grrumpy <Coldblooded> - Faerlina (US)
 ## Version: 0.0.9
