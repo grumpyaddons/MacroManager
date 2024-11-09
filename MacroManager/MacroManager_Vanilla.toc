@@ -1,7 +1,7 @@
 ## Interface: 11403
 ## Title: MacroManager
 ## Author: Grrumpy <Coldblooded> - Faerlina (US)
-## Version: 0.0.10
+## Version: 0.0.9
 ## SavedVariables: MacroManagerSaved
 ## X-Curse-Project-ID: 682909
 
