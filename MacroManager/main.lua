@@ -36,6 +36,12 @@ function main.ShowWindow()
     end
 end
 
+local AceGUI = LibStub("AceGUI-3.0");
+
+
+-- Creating our search box, whenever the user changes the text in this box, it will refresh the display
+
+
 function main.WireUpWidgets()
     Private.Layout.Window.CreateIfNotCreated();
     Private.Layout.MacroEditor.CreateIfNotCreated();
@@ -58,7 +64,25 @@ function main.WireUpWidgets()
         Private.Layout.MacroTree.SelectMacro(macroType, macroId);
     end);
 
+    -- local searchMacrosEditBox = CreateFrame("EditBox", nil, UIParent, "SearchBoxTemplate")
+    -- searchMacrosEditBox:SetPoint("BOTTOMRIGHT", Private.Layout.MacroTree.container.frame, "TOPLEFT", 0, 5)
+    -- searchMacrosEditBox:SetAutoFocus(false)
+    -- searchMacrosEditBox:SetSize(145, 24)
+
+    local filterMacrosEditBox = AceGUI:Create("EditBox");
+    filterMacrosEditBox:SetLabel("Filter macros by name");
+    filterMacrosEditBox:DisableButton(true);
+    filterMacrosEditBox:SetFullWidth(true);
+    filterMacrosEditBox:SetCallback("OnTextChanged", function(self)
+        Private.Layout.MacroTree.GenerateMacroTree(self:GetText());
+    end);
+
+    -- local searchBoxGroup = AceGUI:Create("SimpleGroup")
+    
+
+
     Private.Layout.MacroTree.container:AddChild(Private.Layout.MacroEditor.container);
+    Private.Layout.Window.container:AddChild(filterMacrosEditBox);
     Private.Layout.Window.container:AddChild(Private.Layout.MacroTree.container);
 
     -- Have to do this because the buttons in the tree are not generated until after

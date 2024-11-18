@@ -79,7 +79,22 @@ function MacroTree.SelectMacro(macroType, macroId)
     MacroTree.container:SelectByValue(path);
 end
 
-function MacroTree.GenerateMacroTree()
+-- This is our 'search' function - it will return a boolean value indicating whether the element matches
+--   our search query or not. This is where you'd want to add extra conditions or checks if extending this code
+local function MatchesQuery(element, query)
+    element = element:lower() -- ensure case-insensitive comparison, remove these two lines if this is undesirable
+    query = query:lower()
+
+    local initPos = 1 -- controls the position from which we begin the string comparison. 1 is the first character
+    local noPatternMatch = true -- disables lua pattern matching on the string.find call
+    return string.find(element, query, initPos, noPatternMatch) ~= nil
+end
+
+local function isempty(s)
+    return s == nil or s == ''
+end
+
+function MacroTree.GenerateMacroTree(filterString)
     local characterMacros = {};
     local accountMacros = {};
     local accountMacroCount, characterMacroCount = GetNumMacros();
@@ -90,7 +105,8 @@ function MacroTree.GenerateMacroTree()
         local data = {
             value = i,
             text = name,
-            icon = texture
+            icon = texture,
+            visible = isempty(filterString) or MatchesQuery(name, filterString)
         };
         table.insert(accountMacros, data);
     end
@@ -101,7 +117,8 @@ function MacroTree.GenerateMacroTree()
         local data = {
             value = i,
             text = name,
-            icon = texture
+            icon = texture,
+            visible = isempty(filterString) or MatchesQuery(name, filterString)
         };
         table.insert(characterMacros, data);
     end
@@ -116,6 +133,7 @@ function MacroTree.GenerateMacroTree()
             text = "Character Macros ("..characterMacroCount.."/18)",
             font = "GameFontHighlightSmall",
             disabled = true,
+            visible = true,
             children = characterMacros
         },
         {
@@ -123,11 +141,14 @@ function MacroTree.GenerateMacroTree()
             text = "Account Macros ("..accountMacroCount.."/120)",
             font = "GameFontHighlightSmall",
             disabled = true,
+            visible = true,
             children = accountMacros
         },
     };
 
-    MacroTree.container:SetTree(tree);
+    -- Have to set this to true so the `visible` property works on the tree elements
+    local filterFlag = true;
+    MacroTree.container:SetTree(tree, filterFlag);
     MacroTree.container:SetFullWidth(true);
     if not MacroTree.statusTable.selected then
         MacroTree.container:SelectByValue("new");
@@ -186,7 +207,8 @@ end
 
 function MacroTree.Create()
     local macroTree = AceGUI:Create("MacroManagerTreeGroup");
-    macroTree:SetLayout("Flow");
+    macroTree:SetLayout("List");
+    macroTree:SetFullHeight(true);
 
     -- Expand groups by default
     if not MacroTree.statusTable.groups then

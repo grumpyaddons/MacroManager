@@ -384,7 +384,7 @@ local methods = {
 
 		for i, v in ipairs(tree) do
 			if v.children then
-				if not self.filter or ShouldDisplayLevel(v.children) then
+				if not self.filter or true then
 					local line = addLine(self, v, tree, level, parent)
 					if groups[line.uniquevalue] then
 						self:BuildLevel(v.children, level+1, line)
