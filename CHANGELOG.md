@@ -1,3 +1,6 @@
+#### v0.1.0
+- Add search box to filter macros by name.
+
 #### v0.0.9
 - Update API version.
 
