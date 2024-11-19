@@ -56,7 +56,8 @@ function main.WireUpWidgets()
     end);
     Private.Layout.MacroEditor.SetOnMacroSaveCallback(function(macroType, macroId)
         Private.Layout.MacroTree.GenerateMacroTree();
-        Private.Layout.MacroTree.SelectMacro(macroType, macroId);
+        -- Private.Layout.MacroTree.SelectMacro(macroType, macroId);
+        -- Private.Layout.MacroTree.container.searchbox:SetText('');
     end);
 
     Private.Layout.MacroEditor.SetOnMacroDeleteCallback(function(macroType, macroId)
@@ -64,25 +65,16 @@ function main.WireUpWidgets()
         Private.Layout.MacroTree.SelectMacro(macroType, macroId);
     end);
 
-    -- local searchMacrosEditBox = CreateFrame("EditBox", nil, UIParent, "SearchBoxTemplate")
-    -- searchMacrosEditBox:SetPoint("BOTTOMRIGHT", Private.Layout.MacroTree.container.frame, "TOPLEFT", 0, 5)
-    -- searchMacrosEditBox:SetAutoFocus(false)
-    -- searchMacrosEditBox:SetSize(145, 24)
+    local searchBoxGroup = AceGUI:Create("SimpleGroup")
+    searchBoxGroup:SetFullWidth(true);
+    searchBoxGroup:SetLayout("Flow");
 
-    local filterMacrosEditBox = AceGUI:Create("EditBox");
-    filterMacrosEditBox:SetLabel("Filter macros by name");
-    filterMacrosEditBox:DisableButton(true);
-    filterMacrosEditBox:SetFullWidth(true);
-    filterMacrosEditBox:SetCallback("OnTextChanged", function(self)
-        Private.Layout.MacroTree.GenerateMacroTree(self:GetText());
+    Private.Layout.MacroTree.container.searchbox:HookScript("OnTextChanged", function(self)
+        Private.Layout.MacroTree.SetFilterString(self:GetText());
+        Private.Layout.MacroTree.GenerateMacroTree();
     end);
 
-    -- local searchBoxGroup = AceGUI:Create("SimpleGroup")
-    
-
-
     Private.Layout.MacroTree.container:AddChild(Private.Layout.MacroEditor.container);
-    Private.Layout.Window.container:AddChild(filterMacrosEditBox);
     Private.Layout.Window.container:AddChild(Private.Layout.MacroTree.container);
 
     -- Have to do this because the buttons in the tree are not generated until after

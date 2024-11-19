@@ -10,7 +10,8 @@ local AceGUI = LibStub("AceGUI-3.0");
 local MacroTree = {
     container = nil,
     statusTable = {},
-    onSelectedCallback = nil
+    onSelectedCallback = nil,
+    filterString = nil
 };
 
 function MacroTree.GetMacroTypeAndMacroIdFromUniqueValue(uniqueValue)
@@ -94,11 +95,12 @@ local function isempty(s)
     return s == nil or s == ''
 end
 
-function MacroTree.GenerateMacroTree(filterString)
+function MacroTree.GenerateMacroTree()
     local characterMacros = {};
     local accountMacros = {};
     local accountMacroCount, characterMacroCount = GetNumMacros();
 
+    local accountMacrosVisible = 0;
     -- Account macros start at index 1 through 120
     for i=1, accountMacroCount do
         local name, texture, _ = GetMacroInfo(i);
@@ -106,11 +108,15 @@ function MacroTree.GenerateMacroTree(filterString)
             value = i,
             text = name,
             icon = texture,
-            visible = isempty(filterString) or MatchesQuery(name, filterString)
+            visible = isempty(MacroTree.filterString) or MatchesQuery(name, MacroTree.filterString)
         };
         table.insert(accountMacros, data);
+        if data.visible == true then
+            accountMacrosVisible = accountMacrosVisible + 1
+        end
     end
 
+    local characterMacrosVisible = 0;
     -- Character macros start at index 121 through 138
     for i=121, characterMacroCount + 120 do
         local name, texture, _ = GetMacroInfo(i);
@@ -118,9 +124,27 @@ function MacroTree.GenerateMacroTree(filterString)
             value = i,
             text = name,
             icon = texture,
-            visible = isempty(filterString) or MatchesQuery(name, filterString)
+            visible = isempty(MacroTree.filterString) or MatchesQuery(name, MacroTree.filterString)
         };
         table.insert(characterMacros, data);
+        if data.visible == true then
+            characterMacrosVisible = characterMacrosVisible + 1
+        end
+    end
+
+    local noMacrosLabel = {
+        value = -1,
+        text = "None",
+        visible = true,
+        disabled = true
+    };
+
+    if accountMacrosVisible == 0 then
+        table.insert(accountMacros, noMacrosLabel);
+    end
+
+    if characterMacrosVisible == 0 then
+        table.insert(characterMacros, noMacrosLabel);
     end
 
     local tree = {
@@ -203,6 +227,10 @@ end
 
 function MacroTree.SetOnSelectedCallback(onSelectedCallback)
     MacroTree.onSelectedCallback = onSelectedCallback;
+end
+
+function MacroTree.SetFilterString(value)
+    MacroTree.filterString = value;
 end
 
 function MacroTree.Create()
