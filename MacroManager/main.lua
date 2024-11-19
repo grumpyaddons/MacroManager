@@ -55,14 +55,13 @@ function main.WireUpWidgets()
         end
     end);
     Private.Layout.MacroEditor.SetOnMacroSaveCallback(function(macroType, macroId)
+        Private.Layout.MacroTree.SelectMacro(macroType, macroId);
         Private.Layout.MacroTree.GenerateMacroTree();
-        -- Private.Layout.MacroTree.SelectMacro(macroType, macroId);
-        -- Private.Layout.MacroTree.container.searchbox:SetText('');
     end);
 
     Private.Layout.MacroEditor.SetOnMacroDeleteCallback(function(macroType, macroId)
-        Private.Layout.MacroTree.GenerateMacroTree();
         Private.Layout.MacroTree.SelectMacro(macroType, macroId);
+        Private.Layout.MacroTree.GenerateMacroTree();
     end);
 
     local searchBoxGroup = AceGUI:Create("SimpleGroup")

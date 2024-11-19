@@ -384,6 +384,10 @@ local methods = {
 
 		for i, v in ipairs(tree) do
 			if v.children then
+				-- Original code has this:
+				-- if not self.filter or ShouldDisplayLevel(v.children) then
+				-- This resulted in hiding the parent if there was no children,
+				-- but we want to show the parent even if the children are not visible.
 				if not self.filter or true then
 					local line = addLine(self, v, tree, level, parent)
 					if groups[line.uniquevalue] then
