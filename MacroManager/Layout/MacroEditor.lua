@@ -404,17 +404,11 @@ function MacroEditor.Create()
         end
     end);
 
-    local scrollcontainer = AceGUI:Create("SimpleGroup");
-    scrollcontainer:SetFullWidth(true);
-    scrollcontainer:SetFullHeight(true); -- probably?
-    scrollcontainer:SetLayout("Fill"); -- important!
-
     local scroll = AceGUI:Create("ScrollFrame");
     scroll:SetLayout("List");
     scroll:SetFullWidth(true);
     scroll:SetFullHeight(true);
     scroll:SetStatusTable(MacroEditor.statusTable);
-    scrollcontainer:AddChild(scroll)
 
     scroll:AddChild(macroTypeLabel);
     scroll:AddChild(macroTypeGroup);
@@ -447,7 +441,7 @@ function MacroEditor.Create()
     MacroEditor.macroBodyWidget = macroBodyEditBox;
     MacroEditor.macroDeleteWidget = deleteButton;
 
-    MacroEditor.container = scrollcontainer;
+    MacroEditor.container = scroll;
 end
 
 Private.Layout.MacroEditor = MacroEditor;

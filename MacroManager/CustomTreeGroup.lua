@@ -384,7 +384,7 @@ local methods = {
 
 		for i, v in ipairs(tree) do
 			if v.children then
-				if not self.filter or ShouldDisplayLevel(v.children) then
+				if not self.filter or true then
 					local line = addLine(self, v, tree, level, parent)
 					if groups[line.uniquevalue] then
 						self:BuildLevel(v.children, level+1, line)
@@ -494,11 +494,11 @@ local methods = {
 				button:ClearAllPoints()
 				if buttonnum == 1 then
 					if self.showscroll then
-						button:SetPoint("TOPRIGHT", -22, -10)
-						button:SetPoint("TOPLEFT", 0, -10)
+						button:SetPoint("TOPRIGHT", -22, -30)
+						button:SetPoint("TOPLEFT", 0, -30)
 					else
-						button:SetPoint("TOPRIGHT", 0, -10)
-						button:SetPoint("TOPLEFT", 0, -10)
+						button:SetPoint("TOPRIGHT", 0, -30)
+						button:SetPoint("TOPLEFT", 0, -30)
 					end
 				else
 					button:SetPoint("TOPRIGHT", buttons[buttonnum-1], "BOTTOMRIGHT",0,0)
@@ -669,6 +669,13 @@ local function Constructor()
 	treeframe:SetScript("OnSizeChanged", Tree_OnSizeChanged)
 	treeframe:SetScript("OnMouseWheel", Tree_OnMouseWheel)
 
+	local searchbox = CreateFrame("EditBox", nil, treeframe, "SearchBoxTemplate")
+    searchbox:SetPoint("TOPLEFT", treeframe, "TOPLEFT", 14, -4)
+	searchbox:SetPoint("TOPRIGHT", treeframe, "TOPRIGHT", -8, 0)
+    searchbox:SetAutoFocus(false)
+    searchbox:SetHeight(24)
+	searchbox:SetFrameStrata("FULLSCREEN_DIALOG")
+
 	local dragger = CreateFrame("Frame", nil, treeframe, "BackdropTemplate")
 	dragger:SetWidth(8)
 	dragger:SetPoint("TOP", treeframe, "TOPRIGHT")
@@ -682,7 +689,7 @@ local function Constructor()
 
 	local scrollbar = CreateFrame("Slider", ("AceConfigDialogTreeGroup%dScrollBar"):format(num), treeframe, "UIPanelScrollBarTemplate")
 	scrollbar:SetScript("OnValueChanged", nil)
-	scrollbar:SetPoint("TOPRIGHT", -10, -26)
+	scrollbar:SetPoint("TOPRIGHT", -10, -45)
 	scrollbar:SetPoint("BOTTOMRIGHT", -10, 26)
 	scrollbar:SetMinMaxValues(0,0)
 	scrollbar:SetValueStep(1)
@@ -719,6 +726,7 @@ local function Constructor()
 		scrollbar    = scrollbar,
 		border       = border,
 		content      = content,
+		searchbox    = searchbox,
 		type         = Type
 	}
 	for method, func in pairs(methods) do

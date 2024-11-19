@@ -33,7 +33,7 @@ function MacroManagerWindow.Create()
         end
         --AceGUI:Release(widget);
     end);
-    windowWidget:SetLayout("Fill");
+    windowWidget:SetLayout("Flow");
 
     -- Close the window when escape is pressed.
     -- Taken from https://stackoverflow.com/a/61215014

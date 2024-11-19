@@ -10,7 +10,8 @@ local AceGUI = LibStub("AceGUI-3.0");
 local MacroTree = {
     container = nil,
     statusTable = {},
-    onSelectedCallback = nil
+    onSelectedCallback = nil,
+    filterString = nil
 };
 
 function MacroTree.GetMacroTypeAndMacroIdFromUniqueValue(uniqueValue)
@@ -79,31 +80,71 @@ function MacroTree.SelectMacro(macroType, macroId)
     MacroTree.container:SelectByValue(path);
 end
 
+-- This is our 'search' function - it will return a boolean value indicating whether the element matches
+--   our search query or not. This is where you'd want to add extra conditions or checks if extending this code
+local function MatchesQuery(element, query)
+    element = element:lower() -- ensure case-insensitive comparison, remove these two lines if this is undesirable
+    query = query:lower()
+
+    local initPos = 1 -- controls the position from which we begin the string comparison. 1 is the first character
+    local noPatternMatch = true -- disables lua pattern matching on the string.find call
+    return string.find(element, query, initPos, noPatternMatch) ~= nil
+end
+
+local function isempty(s)
+    return s == nil or s == ''
+end
+
 function MacroTree.GenerateMacroTree()
     local characterMacros = {};
     local accountMacros = {};
     local accountMacroCount, characterMacroCount = GetNumMacros();
 
+    local accountMacrosVisible = 0;
     -- Account macros start at index 1 through 120
     for i=1, accountMacroCount do
         local name, texture, _ = GetMacroInfo(i);
         local data = {
             value = i,
             text = name,
-            icon = texture
+            icon = texture,
+            visible = isempty(MacroTree.filterString) or MatchesQuery(name, MacroTree.filterString)
         };
         table.insert(accountMacros, data);
+        if data.visible == true then
+            accountMacrosVisible = accountMacrosVisible + 1
+        end
     end
 
+    local characterMacrosVisible = 0;
     -- Character macros start at index 121 through 138
     for i=121, characterMacroCount + 120 do
         local name, texture, _ = GetMacroInfo(i);
         local data = {
             value = i,
             text = name,
-            icon = texture
+            icon = texture,
+            visible = isempty(MacroTree.filterString) or MatchesQuery(name, MacroTree.filterString)
         };
         table.insert(characterMacros, data);
+        if data.visible == true then
+            characterMacrosVisible = characterMacrosVisible + 1
+        end
+    end
+
+    local noMacrosLabel = {
+        value = -1,
+        text = "None",
+        visible = true,
+        disabled = true
+    };
+
+    if accountMacrosVisible == 0 then
+        table.insert(accountMacros, noMacrosLabel);
+    end
+
+    if characterMacrosVisible == 0 then
+        table.insert(characterMacros, noMacrosLabel);
     end
 
     local tree = {
@@ -116,6 +157,7 @@ function MacroTree.GenerateMacroTree()
             text = "Character Macros ("..characterMacroCount.."/18)",
             font = "GameFontHighlightSmall",
             disabled = true,
+            visible = true,
             children = characterMacros
         },
         {
@@ -123,11 +165,14 @@ function MacroTree.GenerateMacroTree()
             text = "Account Macros ("..accountMacroCount.."/120)",
             font = "GameFontHighlightSmall",
             disabled = true,
+            visible = true,
             children = accountMacros
         },
     };
 
-    MacroTree.container:SetTree(tree);
+    -- Have to set this to true so the `visible` property works on the tree elements
+    local filterFlag = true;
+    MacroTree.container:SetTree(tree, filterFlag);
     MacroTree.container:SetFullWidth(true);
     if not MacroTree.statusTable.selected then
         MacroTree.container:SelectByValue("new");
@@ -184,9 +229,14 @@ function MacroTree.SetOnSelectedCallback(onSelectedCallback)
     MacroTree.onSelectedCallback = onSelectedCallback;
 end
 
+function MacroTree.SetFilterString(value)
+    MacroTree.filterString = value;
+end
+
 function MacroTree.Create()
     local macroTree = AceGUI:Create("MacroManagerTreeGroup");
-    macroTree:SetLayout("Flow");
+    macroTree:SetLayout("List");
+    macroTree:SetFullHeight(true);
 
     -- Expand groups by default
     if not MacroTree.statusTable.groups then
