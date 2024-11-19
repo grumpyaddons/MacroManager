@@ -36,12 +36,6 @@ function main.ShowWindow()
     end
 end
 
-local AceGUI = LibStub("AceGUI-3.0");
-
-
--- Creating our search box, whenever the user changes the text in this box, it will refresh the display
-
-
 function main.WireUpWidgets()
     Private.Layout.Window.CreateIfNotCreated();
     Private.Layout.MacroEditor.CreateIfNotCreated();
@@ -63,10 +57,6 @@ function main.WireUpWidgets()
         Private.Layout.MacroTree.SelectMacro(macroType, macroId);
         Private.Layout.MacroTree.GenerateMacroTree();
     end);
-
-    local searchBoxGroup = AceGUI:Create("SimpleGroup")
-    searchBoxGroup:SetFullWidth(true);
-    searchBoxGroup:SetLayout("Flow");
 
     Private.Layout.MacroTree.container.searchbox:HookScript("OnTextChanged", function(self)
         Private.Layout.MacroTree.SetFilterString(self:GetText());
