@@ -1,4 +1,4 @@
-## Interface: 110005
+## Interface: 120001
 ## Title: MacroManager
 ## Author: Grrumpy <Coldblooded> - Faerlina (US)
 ## Version: 0.1.0

@@ -1,4 +1,4 @@
-## Interface: 30403
+## Interface: 40400
 ## Version: v1.7.2
 ## Title: MacroManagerData
 ## Author: Xinhuan, Ketho

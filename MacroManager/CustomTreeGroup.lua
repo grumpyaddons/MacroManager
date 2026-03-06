@@ -218,7 +218,7 @@ local function Button_OnEnter(frame)
 		tooltip:SetOwner(frame, "ANCHOR_NONE")
 		tooltip:ClearAllPoints()
 		tooltip:SetPoint("LEFT",frame,"RIGHT")
-		tooltip:SetText(frame.text:GetText() or "", 1, .82, 0, true)
+		tooltip:SetText(frame.text:GetText() or "", 1, .82, 0, 1, true)
 
 		tooltip:Show()
 	end
