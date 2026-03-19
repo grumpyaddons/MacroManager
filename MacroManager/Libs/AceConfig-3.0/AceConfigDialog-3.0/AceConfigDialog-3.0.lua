@@ -508,7 +508,7 @@ local function OptionOnMouseOver(widget, event)
 
 	if descStyle and descStyle ~= "tooltip" then return end
 
-	tooltip:SetText(name, 1, .82, 0, true)
+	tooltip:SetText(name, 1, .82, 0, 1, true)
 
 	if opt.type == "multiselect" then
 		tooltip:AddLine(user.text, 0.5, 0.5, 0.8, true)
@@ -1494,7 +1494,7 @@ local function TreeOnButtonEnter(widget, event, uniquevalue, button)
 		tooltip:SetPoint("LEFT",button,"RIGHT")
 	end
 
-	tooltip:SetText(name, 1, .82, 0, true)
+	tooltip:SetText(name, 1, .82, 0, 1, true)
 
 	if type(desc) == "string" then
 		tooltip:AddLine(desc, 1, 1, 1, true)
