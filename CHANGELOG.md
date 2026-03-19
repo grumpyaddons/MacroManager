@@ -1,3 +1,6 @@
+#### v0.1.1
+- Fix for Midnight client (@albyofdoom in #11)
+
 #### v0.1.0
 - Add search box to filter macros by name.
 
