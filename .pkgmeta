@@ -1,0 +1,13 @@
+package-as: MacroManager
+
+ignore:
+  - Makefile
+  - psakefile.ps1
+  - README.md
+  - AGENTS.md
+  - ui.png
+  - linking-macro.png
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown

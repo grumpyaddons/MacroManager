@@ -1,9 +1,10 @@
 ## Interface: 20506
 ## Title: MacroManager
 ## Author: Grrumpy <Coldblooded> - Faerlina (US)
-## Version: 0.1.0
+## Version: @project-version@
 ## SavedVariables: MacroManagerSaved
 ## X-Curse-Project-ID: 682909
+## X-Wago-ID: WqKQz1Gx
 
 embeds.xml
 
