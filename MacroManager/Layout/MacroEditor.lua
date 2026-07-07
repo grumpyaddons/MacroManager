@@ -218,7 +218,7 @@ function MacroEditor.Create()
     macroNameEditBox:DisableButton(true);
     macroNameEditBox:SetMaxLetters(16);
     macroNameEditBox:SetCallback("OnTextChanged", function(self)
-        self:SetLabel("Macro Name ("..string.len(macroNameEditBox:GetText()).."/16)");
+        self:SetLabel("Macro Name ("..macroNameEditBox.editbox:GetNumLetters().."/16)");
     end);
 
     local macroBodyEditBox = AceGUI:Create("MacroManagerMultiLineEditBox");
@@ -229,7 +229,7 @@ function MacroEditor.Create()
     macroBodyEditBox:SetNumLines(10);
     macroBodyEditBox.editBox:SetCountInvisibleLetters(true);
     macroBodyEditBox:SetCallback("OnTextChanged", function(self)
-        self:SetLabel("Macro Body ("..string.len(macroBodyEditBox:GetText()).."/255)");
+        self:SetLabel("Macro Body ("..macroBodyEditBox.editBox:GetNumLetters().."/255)");
     end);
 
     local macroIcon = AceGUI:Create("Icon");
