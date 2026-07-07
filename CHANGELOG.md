@@ -1,3 +1,9 @@
+#### v0.1.2
+- Fix icon browser search on modern clients (@IchanP in #7).
+- Fix character counters miscounting non-Latin text (#2).
+- Window now remembers its size and position (#3).
+- Add addon icon to the AddOns list.
+
 #### v0.1.1
 - Fix for Midnight client (@albyofdoom in #11)
 
