@@ -8,7 +8,6 @@ local AceGUI = LibStub("AceGUI-3.0");
 
 local MacroManagerWindow = {
     container = nil;
-    statusTable = {}
 };
 
 function MacroManagerWindow.CreateIfNotCreated()
@@ -19,10 +18,10 @@ end
 
 function MacroManagerWindow.Create()
     local windowWidget = AceGUI:Create("Window");
-    -- Couldn't figure out how to set the default height/width
-    MacroManagerWindow.statusTable.height = MacroManagerWindow.statusTable.height or 600;
-    MacroManagerWindow.statusTable.width = MacroManagerWindow.statusTable.width or 600;
-    windowWidget:SetStatusTable(MacroManagerWindow.statusTable);
+    local statusTable = MacroManagerSaved.MacroManagerWindow.statusTable;
+    statusTable.height = statusTable.height or 600;
+    statusTable.width = statusTable.width or 600;
+    windowWidget:SetStatusTable(statusTable);
 
     -- Setting the frame to high as it was above the delete macro dialog box
     windowWidget.frame:SetFrameStrata("HIGH");
