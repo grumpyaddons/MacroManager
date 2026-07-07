@@ -303,7 +303,7 @@ function IconSelectorWindow:Create(name, parent, options)
 	if not options.noHeader then
 		self.header = self:CreateTexture()
 		self.header:SetTexture(options.headerTexture)
-		self.header:SetWidth(options.headerWidth, 64)
+		self.header:SetSize(options.headerWidth, 64)
 		self.header:SetPoint("TOP", 0, 12)
 
 		self.headerText = self:CreateFontString()
