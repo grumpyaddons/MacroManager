@@ -1,8 +1,22 @@
 local _, Private = ...;
 
 -- Contain accessing undefined variables to one place to remove linter warnings.
-local hooksecurefunc, GetItemInfo, GetItemSpell, GetSpellInfo, CreateFrame = hooksecurefunc, GetItemInfo, GetItemSpell, GetSpellInfo, CreateFrame;
+local hooksecurefunc, GetItemInfo, GetItemSpell, GetSpellInfo, CreateFrame, C_Spell = hooksecurefunc, GetItemInfo, GetItemSpell, GetSpellInfo, CreateFrame, C_Spell;
 local strfind, strsub, strmatch = strfind, strsub, strmatch;
+
+-- GetSpellInfo (multi-return) was removed on Retail as part of the 11.0
+-- SpellBook API rewrite, replaced by C_Spell.GetSpellInfo (single table
+-- return). Classic-family clients still have the old global. Prefer the
+-- modern table API when present, fall back to the old global otherwise.
+local function GetSpellName(spellId)
+    if ( C_Spell and C_Spell.GetSpellInfo ) then
+        local info = C_Spell.GetSpellInfo(spellId);
+        return info and info.name;
+    end
+    if ( GetSpellInfo ) then
+        return GetSpellInfo(spellId);
+    end
+end
 
 -- Returns true once the paste has been handled (inserted, or nothing to do).
 -- Returns false when the item/spell data isn't cached client-side yet, so the
@@ -41,7 +55,7 @@ local function TryInsertLink(text)
         end
     elseif isSpell then
         local spellId = strmatch(text, "spell:(%d+):");
-        local spellName = GetSpellInfo(tonumber(spellId));
+        local spellName = GetSpellName(tonumber(spellId));
 
         -- Spell names are essentially always cached (spellbook, auras, etc.),
         -- unlike brand new items, so just fall back to the raw link rather
