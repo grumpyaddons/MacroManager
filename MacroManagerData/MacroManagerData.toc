@@ -4,6 +4,7 @@
 ## Author: Xinhuan, Ketho
 ## Notes: Load on Demand Icon FileData
 ## LoadOnDemand: 1
+## IconTexture: Interface\Icons\INV_Misc_Book_09
 
 FileDataRetail.lua
 FileDataClassic.lua

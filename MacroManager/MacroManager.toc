@@ -5,6 +5,7 @@
 ## SavedVariables: MacroManagerSaved
 ## X-Curse-Project-ID: 682909
 ## X-Wago-ID: WqKQz1Gx
+## IconTexture: Interface\Icons\INV_Misc_Book_09
 
 embeds.xml
 
