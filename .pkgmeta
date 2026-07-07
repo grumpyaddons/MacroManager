@@ -1,5 +1,9 @@
 package-as: MacroManager
 
+move-folders:
+  MacroManager/MacroManager: MacroManager
+  MacroManager/MacroManagerData: MacroManagerData
+
 ignore:
   - Makefile
   - psakefile.ps1
