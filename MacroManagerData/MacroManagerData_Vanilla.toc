@@ -1,4 +1,4 @@
-## Interface: 11504
+## Interface: 11508
 ## Version: v1.7.2
 ## Title: MacroManagerData
 ## Author: Xinhuan, Ketho
