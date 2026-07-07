@@ -1,18 +1,22 @@
 # AGENTS.md
 
 MacroManager is a UI layer on top of Blizzard's existing macro system,
-supporting Retail, Cata, Wrath, TBC (Anniversary), and Vanilla Classic via
-per-flavor TOC files. When replicating stock behavior (link insertion, icon
-picking, macro editing), mirror Blizzard's own implementation instead of
+supporting Retail, MoP Classic, Wrath, TBC (Anniversary), and Vanilla Classic
+via per-flavor TOC files. When replicating stock behavior (link insertion,
+icon picking, macro editing), mirror Blizzard's own implementation instead of
 hand-rolling it — hand-rolled logic is what drifts out of sync when Blizzard
 restructures an API.
 
 ## TOC / interface versions
 
-Files: `MacroManager.toc` (Retail), `MacroManager_Cata.toc`,
+Files: `MacroManager.toc` (Retail), `MacroManager_MoP.toc`,
 `MacroManager_Wrath.toc`, `MacroManager_TBC.toc`, `MacroManager_Vanilla.toc`,
 same under `MacroManagerData/`. Classic progression realms keep advancing
-expansions, so don't infer the flavor from a folder name — confirm it.
+expansions — the same servers get renamed to the next expansion outright
+(Cata Classic realms literally became MoP Classic realms in the July 2025
+pre-patch, not a new parallel option) — so don't infer the flavor from a
+folder name, and expect to rename/retire a flavor file entirely once its
+realms have moved on, not just add a new one alongside it.
 
 To find the current interface number, don't guess from memory:
 
