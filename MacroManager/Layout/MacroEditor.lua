@@ -34,10 +34,15 @@ local MacroEditor = {
     macroNameWidget = nil,
     macroBodyWidget = nil,
     macroSaveWidget = nil,
+    discardWidget = nil,
     macroDeleteWidget = nil,
     changeIconWidget = nil,
     resetIconWidget = nil,
     readOnlyNoticeWidget = nil,
+
+    -- Snapshot of the macro as last loaded/saved/discarded. Save/Discard are only
+    -- enabled when the live widgets have drifted from this baseline.
+    originalMacro = nil,
 
     iconPicker = nil,
 
@@ -135,6 +140,16 @@ function MacroEditor.RefreshWidgets()
 
     local isReadOnly = MacroEditor.mode == "readonly";
 
+    -- Snapshot the freshly (re)loaded macro as the "clean" baseline that Save/Discard
+    -- compare future edits against. Must happen before the widgets below are
+    -- populated, since populating them fires OnTextChanged, which checks dirty state.
+    MacroEditor.originalMacro = {
+        name = MacroEditor.selectedMacro.name,
+        icon = MacroEditor.selectedMacro.icon,
+        body = MacroEditor.selectedMacro.body,
+        type = MacroEditor.selectedMacro.type
+    };
+
     local isAccountMacro = MacroEditor.selectedMacro.type == "account";
     MacroEditor.macroTypeRadioButtons.accountMacroRadioButton:SetValue(isAccountMacro);
     MacroEditor.macroTypeRadioButtons.characterMacroRadioButton:SetValue(not isAccountMacro);
@@ -165,6 +180,57 @@ function MacroEditor.RefreshWidgets()
     end
 
     MacroEditor.RefreshVisibility();
+    MacroEditor.RefreshDirtyState();
+end
+
+-- Whether the live widgets have drifted from MacroEditor.originalMacro, i.e. whether
+-- there's anything for Save/Discard to act on.
+function MacroEditor.IsDirty()
+    if MacroEditor.mode == "readonly" then
+        return false;
+    end
+
+    local original = MacroEditor.originalMacro;
+    if not original then
+        return false;
+    end
+
+    if MacroEditor.selectedMacro.iconModified then
+        return true;
+    end
+
+    if MacroEditor.selectedMacro.type ~= original.type then
+        return true;
+    end
+
+    if MacroEditor.macroNameWidget:GetText() ~= (original.name or "") then
+        return true;
+    end
+
+    if MacroEditor.macroBodyWidget:GetText() ~= (original.body or "") then
+        return true;
+    end
+
+    return false;
+end
+
+-- Called after anything that could change dirty state: every keystroke in the name/body
+-- boxes, macro type toggles, and icon changes.
+function MacroEditor.RefreshDirtyState()
+    local isDirty = MacroEditor.IsDirty();
+    MacroEditor.macroSaveWidget:SetDisabled(not isDirty);
+    MacroEditor.discardWidget:SetDisabled(not isDirty);
+end
+
+-- Reverts the form back to MacroEditor.originalMacro, discarding any unsaved edits.
+function MacroEditor.DiscardChanges()
+    local original = MacroEditor.originalMacro;
+    MacroEditor.selectedMacro.name = original.name;
+    MacroEditor.selectedMacro.icon = original.icon;
+    MacroEditor.selectedMacro.body = original.body;
+    MacroEditor.selectedMacro.type = original.type;
+    MacroEditor.selectedMacro.iconModified = false;
+    MacroEditor.RefreshWidgets();
 end
 
 -- AceGUI's "List" layout (used by MacroEditor.container) unconditionally shows every
@@ -177,11 +243,13 @@ function MacroEditor.RefreshVisibility()
     if isReadOnly then
         MacroEditor.macroDeleteWidget.frame:Hide();
         MacroEditor.macroSaveWidget.frame:Hide();
+        MacroEditor.discardWidget.frame:Hide();
         MacroEditor.changeIconWidget.frame:Hide();
         MacroEditor.resetIconWidget.frame:Hide();
         MacroEditor.readOnlyNoticeWidget.frame:Show();
     else
         MacroEditor.macroSaveWidget.frame:Show();
+        MacroEditor.discardWidget.frame:Show();
         MacroEditor.changeIconWidget.frame:Show();
         MacroEditor.resetIconWidget.frame:Show();
         MacroEditor.readOnlyNoticeWidget.frame:Hide();
@@ -250,6 +318,7 @@ function MacroEditor.Create()
             macroType = "account";
         end;
         MacroEditor.selectedMacro.type = macroType;
+        MacroEditor.RefreshDirtyState();
     end)
 
     macroTypeRadioButtons.accountMacroRadioButton = AceGUI:Create("CheckBox");
@@ -264,6 +333,7 @@ function MacroEditor.Create()
             macroType = "character";
         end;
         MacroEditor.selectedMacro.type = macroType;
+        MacroEditor.RefreshDirtyState();
     end)
 
     macroTypeGroup:AddChild(macroTypeRadioButtons.characterMacroRadioButton);
@@ -276,6 +346,7 @@ function MacroEditor.Create()
     macroNameEditBox:SetMaxLetters(16);
     macroNameEditBox:SetCallback("OnTextChanged", function(self)
         self:SetLabel("Macro Name ("..macroNameEditBox.editbox:GetNumLetters().."/16)");
+        MacroEditor.RefreshDirtyState();
     end);
 
     local macroBodyEditBox = AceGUI:Create("MacroManagerMultiLineEditBox");
@@ -287,6 +358,7 @@ function MacroEditor.Create()
     macroBodyEditBox.editBox:SetCountInvisibleLetters(true);
     macroBodyEditBox:SetCallback("OnTextChanged", function(self)
         self:SetLabel("Macro Body ("..macroBodyEditBox.editBox:GetNumLetters().."/255)");
+        MacroEditor.RefreshDirtyState();
     end);
 
     local macroIcon = AceGUI:Create("Icon");
@@ -326,6 +398,7 @@ function MacroEditor.Create()
         MacroEditor.iconPicker.iconsFrame:SetScript("OnSelectedIconChanged", function()
             macroIcon:SetImage("Interface\\Icons\\" .. MacroEditor.iconPicker.iconsFrame.selectedButton.texture);
             MacroEditor.selectedMacro.iconModified = true;
+            MacroEditor.RefreshDirtyState();
         end);
         MacroEditor.iconPicker:ClearAllPoints();
         MacroEditor.iconPicker:SetPoint("TOP", Private.Layout.Window.container.frame, "TOP");
@@ -339,6 +412,7 @@ function MacroEditor.Create()
     useQuestionMarkIconButton:SetCallback("OnClick", function()
         macroIcon:SetImage("INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK");
         MacroEditor.selectedMacro.iconModified = true;
+        MacroEditor.RefreshDirtyState();
     end);
 
     local saveButton = AceGUI:Create("Button");
@@ -443,6 +517,19 @@ function MacroEditor.Create()
         MacroEditor.OnMacroSaveCallback(MacroEditor.selectedMacro.type, newMacroId);
     end);
 
+    local discardButton = AceGUI:Create("Button");
+    discardButton:SetText("Discard");
+    discardButton:SetWidth(100);
+    discardButton:SetCallback("OnClick", function()
+        MacroEditor.DiscardChanges();
+    end);
+
+    local saveButtonGroup = AceGUI:Create("SimpleGroup");
+    saveButtonGroup:SetLayout("Flow");
+    saveButtonGroup:SetFullWidth(true);
+    saveButtonGroup:AddChild(saveButton);
+    saveButtonGroup:AddChild(discardButton);
+
     local deleteButton = AceGUI:Create("Button");
     deleteButton:SetText("Delete");
     deleteButton:SetWidth(100);
@@ -486,7 +573,7 @@ function MacroEditor.Create()
     scroll:AddChild(macroBodyEditBox);
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(readOnlyNoticeLabel);
-    scroll:AddChild(saveButton);
+    scroll:AddChild(saveButtonGroup);
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(deleteButton);
 
@@ -504,6 +591,7 @@ function MacroEditor.Create()
     MacroEditor.macroNameWidget = macroNameEditBox;
     MacroEditor.macroBodyWidget = macroBodyEditBox;
     MacroEditor.macroSaveWidget = saveButton;
+    MacroEditor.discardWidget = discardButton;
     MacroEditor.macroDeleteWidget = deleteButton;
     MacroEditor.changeIconWidget = changeIconButton;
     MacroEditor.resetIconWidget = useQuestionMarkIconButton;
