@@ -1,4 +1,4 @@
-local Type, Version = "MacroManagerMultiLineEditBox", 34
+local Type, Version = "MacroManagerMultiLineEditBox", 35
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
@@ -133,11 +133,23 @@ local function OnTextChanged(self, userInput)                                   
 		self = self.obj
 		if self.disabled then
 			-- Read-only: text stays selectable/copyable, but any attempted edit snaps
-			-- back. SetText's OnTextSet handler always resets the cursor to the start,
-			-- so restore it to roughly where the user was instead of leaving it there.
+			-- back to the original. Undo the cursor's move too - using just the
+			-- post-edit cursor position (clamped) left it drifting forward by one
+			-- with every attempted keystroke, since that position already includes
+			-- the (about to be reverted) typed character. Subtracting how much the
+			-- text length changed cancels that out for typing/backspace/paste, so
+			-- the cursor ends up back where it actually was.
 			local cursorPosition = self.editBox:GetCursorPosition()
-			self.editBox:SetText(self.readOnlyText or "")
-			self.editBox:SetCursorPosition(math.min(cursorPosition, self.editBox:GetNumLetters()))
+			local oldText = self.readOnlyText or ""
+			local deltaLength = self.editBox:GetNumLetters() - #oldText
+			self.editBox:SetText(oldText)
+			local desiredPosition = cursorPosition - deltaLength
+			if desiredPosition < 0 then
+				desiredPosition = 0
+			elseif desiredPosition > #oldText then
+				desiredPosition = #oldText
+			end
+			self.editBox:SetCursorPosition(desiredPosition)
 			return
 		end
 		self:Fire("OnTextChanged", self.editBox:GetText())
