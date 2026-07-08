@@ -158,14 +158,27 @@ function MacroEditor.RefreshWidgets()
     MacroEditor.macroBodyWidget:SetDisabled(isReadOnly);
 
     if isReadOnly then
-        MacroEditor.macroDeleteWidget.frame:Hide();
-        MacroEditor.macroSaveWidget.frame:Hide();
-        MacroEditor.changeIconWidget.frame:Hide();
-        MacroEditor.resetIconWidget.frame:Hide();
         MacroEditor.readOnlyNoticeWidget:SetText(
             "Read-only copy of a macro from "..MacroEditor.selectedMacro.snapshotCharacterName..
             ", captured the last time that character logged in."
         );
+    end
+
+    MacroEditor.RefreshVisibility();
+end
+
+-- AceGUI's "List" layout (used by MacroEditor.container) unconditionally shows every
+-- child's frame whenever it lays out, which happens any time the window is resized.
+-- That would undo the Hide() calls below, so this is re-run after every layout pass
+-- (see the LayoutFinished hook in Create()) instead of only from RefreshWidgets.
+function MacroEditor.RefreshVisibility()
+    local isReadOnly = MacroEditor.mode == "readonly";
+
+    if isReadOnly then
+        MacroEditor.macroDeleteWidget.frame:Hide();
+        MacroEditor.macroSaveWidget.frame:Hide();
+        MacroEditor.changeIconWidget.frame:Hide();
+        MacroEditor.resetIconWidget.frame:Hide();
         MacroEditor.readOnlyNoticeWidget.frame:Show();
     else
         MacroEditor.macroSaveWidget.frame:Show();
@@ -495,6 +508,15 @@ function MacroEditor.Create()
     MacroEditor.changeIconWidget = changeIconButton;
     MacroEditor.resetIconWidget = useQuestionMarkIconButton;
     MacroEditor.readOnlyNoticeWidget = readOnlyNoticeLabel;
+
+    -- Re-apply widget visibility after every layout pass (e.g. window resize), since
+    -- AceGUI's List layout unconditionally re-shows every child frame. Wrap rather than
+    -- replace: the ScrollFrame widget's own LayoutFinished fixes up the scroll height.
+    local scrollLayoutFinished = scroll.LayoutFinished;
+    scroll.LayoutFinished = function(self, width, height)
+        scrollLayoutFinished(self, width, height);
+        MacroEditor.RefreshVisibility();
+    end
 
     MacroEditor.container = scroll;
 end
