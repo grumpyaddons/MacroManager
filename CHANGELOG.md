@@ -1,5 +1,6 @@
 #### v0.2.0
 - Add read-only character macro snapshots: browse and share any character's macros from any other character, even while they're offline.
+- Fix selecting an icon in the icon picker showing a black icon (known issue since v0.0.8).
 
 #### v0.1.2
 - Fix icon browser search on modern clients (@IchanP in #7).

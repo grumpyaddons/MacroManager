@@ -36,7 +36,7 @@ local DEBUG = false
 if DEBUG and LibDebug then LibDebug() end
 
 local MAJOR_VERSION = "LibAdvancedIconSelector-1.0-LMIS"
-local MINOR_VERSION = 14			-- (do not call GetAddOnMetaData)
+local MINOR_VERSION = 15			-- (do not call GetAddOnMetaData)
 
 local GetAddOnMetadata = GetAddOnMetadata
 if C_AddOns.GetAddOnMetadata then
@@ -769,6 +769,10 @@ function IconSelectorFrame.private_OnInternalFrameSizeChanged(internalFrame, wid
 				button:SetSize(36, 36)
 				button:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
 				button:SetCheckedTexture("Interface\\Buttons\\CheckButtonHilight")
+				-- Default blend mode ("BLEND") renders this texture as a near-opaque
+				-- black square over the icon instead of a highlight overlay. "ADD" is
+				-- how Blizzard's own checkbox/highlight textures are meant to be used.
+				button:GetCheckedTexture():SetBlendMode("ADD")
 
 				button:SetScript("OnClick", function(button, mouseButton, down)
 					if button.textureKind and button.textureID then
