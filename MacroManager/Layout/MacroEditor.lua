@@ -33,9 +33,9 @@ local MacroEditor = {
     macroIconWidget = nil,
     macroNameWidget = nil,
     macroBodyWidget = nil,
+    selectBodyWidget = nil,
     macroSaveWidget = nil,
     discardWidget = nil,
-    saveButtonGroupWidget = nil,
     macroDeleteWidget = nil,
     changeIconWidget = nil,
     resetIconWidget = nil,
@@ -261,6 +261,20 @@ local function SetShown(widget, shown)
     end
 end
 
+-- Same idea as SetShown(), but for a widget inside a "Flow" row (Save/Discard/Select
+-- Body sit side by side in saveButtonGroup) where the siblings are chained
+-- left-to-right instead of top-to-bottom, so it's WIDTH that needs collapsing
+-- instead of height to avoid the same zero-size anchor break.
+local function SetShownInRow(widget, shown)
+    if shown then
+        widget.frame:Show();
+        widget:SetWidth(widget.naturalWidth);
+    else
+        widget.frame:Hide();
+        widget:SetWidth(0.01);
+    end
+end
+
 -- AceGUI's "List" layout (used by MacroEditor.container) unconditionally shows every
 -- child's frame whenever it lays out, which happens any time the window is resized.
 -- That would undo the SetShown() calls below, so this is re-run after every layout
@@ -268,7 +282,11 @@ end
 function MacroEditor.RefreshVisibility()
     local isReadOnly = MacroEditor.mode == "readonly";
 
-    SetShown(MacroEditor.saveButtonGroupWidget, not isReadOnly);
+    -- The group itself (saveButtonGroup) always stays shown, since Select Body -
+    -- which lives in the same row - must remain visible in every mode. Save and
+    -- Discard are hidden individually within the row instead.
+    SetShownInRow(MacroEditor.macroSaveWidget, not isReadOnly);
+    SetShownInRow(MacroEditor.discardWidget, not isReadOnly);
     SetShown(MacroEditor.changeIconWidget, not isReadOnly);
     SetShown(MacroEditor.resetIconWidget, not isReadOnly);
     SetShown(MacroEditor.macroDeleteWidget, MacroEditor.mode == "edit");
@@ -379,6 +397,19 @@ function MacroEditor.Create()
         MacroEditor.RefreshDirtyState();
     end);
 
+    -- WoW addons have no OS clipboard API, so this can't copy directly - it focuses
+    -- the body box and selects all its text so the user can hit Ctrl+C themselves.
+    -- Works the same way in every mode, including read-only (the text is always
+    -- selectable/copyable even when disabled - see CustomMultiLineEditBox.lua).
+    local selectBodyButton = AceGUI:Create("Button");
+    selectBodyButton:SetText("Select Body");
+    selectBodyButton:SetWidth(110);
+    selectBodyButton:SetCallback("OnClick", function()
+        local editBox = macroBodyEditBox.editBox;
+        macroBodyEditBox:SetFocus();
+        editBox:HighlightText(0, editBox:GetNumLetters());
+    end);
+
     local macroIcon = AceGUI:Create("Icon");
     macroIcon:SetImage("INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK");
     macroIcon:SetImageSize(48, 48);
@@ -438,6 +469,7 @@ function MacroEditor.Create()
     local saveButton = AceGUI:Create("Button");
     saveButton:SetText("Save");
     saveButton:SetWidth(100);
+    saveButton.naturalWidth = saveButton.frame:GetWidth();
     saveButton:SetCallback("OnClick", function()
         local newName = macroNameEditBox:GetText();
 
@@ -540,28 +572,26 @@ function MacroEditor.Create()
     local discardButton = AceGUI:Create("Button");
     discardButton:SetText("Discard");
     discardButton:SetWidth(100);
+    discardButton.naturalWidth = discardButton.frame:GetWidth();
     discardButton:SetCallback("OnClick", function()
         MacroEditor.DiscardChanges();
     end);
 
     local saveButtonGroup = AceGUI:Create("SimpleGroup");
     saveButtonGroup:SetLayout("Flow");
+    -- Explicit width (rather than the 300px default, and set before AddChild since
+    -- each AddChild triggers an immediate Flow layout pass using whatever width is
+    -- current at that moment) so all three buttons (100+100+110=310) stay on one
+    -- row instead of selectBodyButton wrapping to a row of its own.
+    saveButtonGroup:SetWidth(340);
     saveButtonGroup:AddChild(saveButton);
     saveButtonGroup:AddChild(discardButton);
+    saveButtonGroup:AddChild(selectBodyButton);
     -- Not full-width: that would flag it as a "fill" child, which makes the outer
-    -- List layout re-trigger this group's own layout (and its auto-height-from-
-    -- content) on every resize, fighting the SetShown() height override below.
-    -- The default SimpleGroup width comfortably fits the two 100px buttons anyway.
-    saveButtonGroup.naturalHeight = saveButtonGroup.frame:GetHeight();
-    -- SimpleGroup is a container, so its .content frame gets a native OnSizeChanged
-    -- hook (see ContentResize/RegisterAsContainer in AceGUI-3.0.lua) that re-runs this
-    -- group's own Flow layout any time .content's real size changes -- including the
-    -- change caused by SetShown()'s SetHeight(0) below. That re-layout's LayoutFinished
-    -- unconditionally calls SetHeight(<natural height>) again (see AceGUIContainer-
-    -- SimpleGroup.lua), silently reverting our collapse a moment later. Disabling
-    -- auto-height stops that fight; must come *after* the natural height above is
-    -- captured, since that capture relies on the auto-height Flow computed for us.
-    saveButtonGroup:SetAutoAdjustHeight(false);
+    -- List layout re-trigger this group's own layout on every resize. The group
+    -- itself is never collapsed (Select Body must stay visible in every mode, so
+    -- Save/Discard are hidden individually within it instead - see SetShownInRow()),
+    -- so its own auto-height behavior is left enabled and just works.
 
     local deleteButton = AceGUI:Create("Button");
     deleteButton:SetText("Delete");
@@ -624,9 +654,9 @@ function MacroEditor.Create()
     MacroEditor.macroIconWidget = macroIcon;
     MacroEditor.macroNameWidget = macroNameEditBox;
     MacroEditor.macroBodyWidget = macroBodyEditBox;
+    MacroEditor.selectBodyWidget = selectBodyButton;
     MacroEditor.macroSaveWidget = saveButton;
     MacroEditor.discardWidget = discardButton;
-    MacroEditor.saveButtonGroupWidget = saveButtonGroup;
     MacroEditor.macroDeleteWidget = deleteButton;
     MacroEditor.changeIconWidget = changeIconButton;
     MacroEditor.resetIconWidget = useQuestionMarkIconButton;
