@@ -213,6 +213,9 @@ function MacroTree.GenerateMacroTree()
             text = characterName.." ("..#macros.."/"..MAX_CHARACTER_MACROS..")",
             font = "GameFontHighlightSmall",
             classColor = ClassColorStr(characterName),
+            -- Only the name itself (the first `nameLength` characters of `text`)
+            -- gets class-colored; the "(x/y)" count stays the default header gold.
+            nameLength = #characterName,
             disabled = true,
             visible = true,
             children = children
@@ -233,6 +236,9 @@ function MacroTree.GenerateMacroTree()
             text = currentCharacterName.." ("..characterMacroCount.."/"..MAX_CHARACTER_MACROS..")",
             font = "GameFontHighlightSmall",
             classColor = ClassColorStr(currentCharacterName),
+            -- Only the name itself (the first `nameLength` characters of `text`)
+            -- gets class-colored; the "(x/y)" count stays the default header gold.
+            nameLength = #currentCharacterName,
             disabled = true,
             visible = true,
             children = characterMacros

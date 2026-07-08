@@ -2,7 +2,7 @@
 TreeGroup Container
 Container that uses a tree control to switch between groups.
 -------------------------------------------------------------------------------]]
-local Type, Version = "MacroManagerTreeGroup", 48
+local Type, Version = "MacroManagerTreeGroup", 49
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
@@ -95,8 +95,16 @@ local function UpdateButton(button, treeline, selected, canExpand, isExpanded)
     end
 
 	if disabled then
-		local colorStr = treeline.classColor or "ffffd100"
-		button.text:SetText("|c"..colorStr..text..FONT_COLOR_CODE_CLOSE)
+		if treeline.classColor and treeline.nameLength then
+			-- Color only the character's name (the first nameLength characters);
+			-- the rest of the line (e.g. a "(x/y)" macro count) stays default gold.
+			local namePart = text:sub(1, treeline.nameLength);
+			local restPart = text:sub(treeline.nameLength + 1);
+			button.text:SetText("|c"..treeline.classColor..namePart..FONT_COLOR_CODE_CLOSE.."|cffffd100"..restPart..FONT_COLOR_CODE_CLOSE)
+		else
+			local colorStr = treeline.classColor or "ffffd100"
+			button.text:SetText("|c"..colorStr..text..FONT_COLOR_CODE_CLOSE)
+		end
 	else
 		button.text:SetText(text)
 	end
@@ -152,6 +160,7 @@ local function addLine(self, v, tree, level, parent)
 	line.text = v.text
     line.font = v.font
 	line.classColor = v.classColor
+	line.nameLength = v.nameLength
 	line.icon = v.icon
 	line.iconCoords = v.iconCoords
 	line.disabled = v.disabled
