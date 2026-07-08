@@ -38,8 +38,7 @@ local MacroEditor = {
     macroSaveWidget = nil,
     discardWidget = nil,
     macroDeleteWidget = nil,
-    changeIconWidget = nil,
-    resetIconWidget = nil,
+    iconButtonGroupWidget = nil,
     readOnlyNoticeWidget = nil,
 
     -- Snapshot of the macro as last loaded/saved/discarded. Save/Discard are only
@@ -288,8 +287,7 @@ function MacroEditor.RefreshVisibility()
     -- Discard are hidden individually within the row instead.
     SetShownInRow(MacroEditor.macroSaveWidget, not isReadOnly);
     SetShownInRow(MacroEditor.discardWidget, not isReadOnly);
-    SetShown(MacroEditor.changeIconWidget, not isReadOnly);
-    SetShown(MacroEditor.resetIconWidget, not isReadOnly);
+    SetShown(MacroEditor.iconButtonGroupWidget, not isReadOnly);
     SetShown(MacroEditor.macroDeleteWidget, MacroEditor.mode == "edit");
 
     if isReadOnly then
@@ -469,7 +467,6 @@ function MacroEditor.Create()
     local changeIconButton = AceGUI:Create("Button");
     changeIconButton:SetText("Select Icon");
     changeIconButton:SetWidth(125);
-    changeIconButton.naturalHeight = changeIconButton.frame:GetHeight();
     changeIconButton:SetCallback("OnClick", function()
         MacroEditor.LoadIconPickerData();
         local lib = LibStub("LibAdvancedIconSelector-1.0-LMIS")    -- (ideally, this would be loaded on-demand)
@@ -494,12 +491,32 @@ function MacroEditor.Create()
     local useQuestionMarkIconButton = AceGUI:Create("Button");
     useQuestionMarkIconButton:SetText("Reset Icon (?)");
     useQuestionMarkIconButton:SetWidth(125);
-    useQuestionMarkIconButton.naturalHeight = useQuestionMarkIconButton.frame:GetHeight();
     useQuestionMarkIconButton:SetCallback("OnClick", function()
         macroIcon:SetImage("INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK");
         MacroEditor.selectedMacro.iconModified = true;
         MacroEditor.RefreshDirtyState();
     end);
+
+    local iconButtonGroup = AceGUI:Create("SimpleGroup");
+    iconButtonGroup:SetLayout("Flow");
+    -- Explicit width (rather than the 300px default, and set before AddChild since
+    -- each AddChild triggers an immediate Flow layout pass using whatever width is
+    -- current at that moment) so both buttons (125+125=250) stay on one row.
+    iconButtonGroup:SetWidth(260);
+    iconButtonGroup:AddChild(changeIconButton);
+    iconButtonGroup:AddChild(useQuestionMarkIconButton);
+    -- Not full-width: that would flag it as a "fill" child, which makes the outer
+    -- List layout re-trigger this group's own layout (and its auto-height-from-
+    -- content) on every resize, fighting the SetShown() height override below.
+    iconButtonGroup.naturalHeight = iconButtonGroup.frame:GetHeight();
+    -- SimpleGroup is a container, so its .content frame gets a native OnSizeChanged
+    -- hook that re-runs this group's own Flow layout any time .content's real size
+    -- changes - including the change caused by SetShown()'s SetHeight(0.01) below.
+    -- That re-layout's LayoutFinished unconditionally calls SetHeight(<natural
+    -- height>) again, silently reverting our collapse a moment later. Disabling
+    -- auto-height stops that fight; must come *after* the natural height above is
+    -- captured, since that capture relies on the auto-height Flow computed for us.
+    iconButtonGroup:SetAutoAdjustHeight(false);
 
     local saveButton = AceGUI:Create("Button");
     saveButton:SetText("Save");
@@ -666,8 +683,7 @@ function MacroEditor.Create()
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(iconLabel);
     scroll:AddChild(macroIcon);
-    scroll:AddChild(changeIconButton);
-    scroll:AddChild(useQuestionMarkIconButton);
+    scroll:AddChild(iconButtonGroup);
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(macroBodyEditBox);
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
@@ -693,8 +709,7 @@ function MacroEditor.Create()
     MacroEditor.macroSaveWidget = saveButton;
     MacroEditor.discardWidget = discardButton;
     MacroEditor.macroDeleteWidget = deleteButton;
-    MacroEditor.changeIconWidget = changeIconButton;
-    MacroEditor.resetIconWidget = useQuestionMarkIconButton;
+    MacroEditor.iconButtonGroupWidget = iconButtonGroup;
     MacroEditor.readOnlyNoticeWidget = readOnlyNoticeLabel;
 
     -- Re-apply widget visibility after every layout pass (e.g. window resize), since
