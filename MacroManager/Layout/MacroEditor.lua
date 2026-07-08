@@ -381,6 +381,40 @@ function MacroEditor.Create()
     macroNameEditBox:SetWidth(200);
     macroNameEditBox:DisableButton(true);
     macroNameEditBox:SetMaxLetters(16);
+
+    -- Stock AceGUI EditBox's SetDisabled() calls editbox:EnableMouse(false), which
+    -- blocks click-to-focus and click-drag selection entirely - meaning the name
+    -- couldn't even be highlighted/copied in read-only mode. Override on just this
+    -- instance (not the shared widget type - other addons use plain "EditBox" too)
+    -- to keep it selectable and instead revert any attempted edit, mirroring the
+    -- macro body box's read-only behavior in CustomMultiLineEditBox.lua.
+    macroNameEditBox.SetDisabled = function(self, disabled)
+        self.disabled = disabled;
+        if disabled then
+            self.readOnlyText = self.editbox:GetText();
+            self.editbox:SetTextColor(0.5, 0.5, 0.5);
+            self.label:SetTextColor(0.5, 0.5, 0.5);
+        else
+            self.editbox:SetTextColor(1, 1, 1);
+            self.label:SetTextColor(1, 0.82, 0);
+        end
+    end;
+    macroNameEditBox.editbox:HookScript("OnTextChanged", function(editbox, userInput)
+        if userInput and macroNameEditBox.disabled then
+            local cursorPosition = editbox:GetCursorPosition();
+            local oldText = macroNameEditBox.readOnlyText or "";
+            local deltaLength = editbox:GetNumLetters() - #oldText;
+            editbox:SetText(oldText);
+            local desiredPosition = cursorPosition - deltaLength;
+            if desiredPosition < 0 then
+                desiredPosition = 0;
+            elseif desiredPosition > #oldText then
+                desiredPosition = #oldText;
+            end
+            editbox:SetCursorPosition(desiredPosition);
+        end
+    end);
+
     macroNameEditBox:SetCallback("OnTextChanged", function(self)
         self:SetLabel("Macro Name ("..macroNameEditBox.editbox:GetNumLetters().."/16)");
         MacroEditor.RefreshDirtyState();
