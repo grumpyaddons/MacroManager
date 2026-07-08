@@ -35,6 +35,7 @@ local MacroEditor = {
     macroBodyWidget = nil,
     macroSaveWidget = nil,
     discardWidget = nil,
+    saveButtonGroupWidget = nil,
     macroDeleteWidget = nil,
     changeIconWidget = nil,
     resetIconWidget = nil,
@@ -238,32 +239,44 @@ function MacroEditor.DiscardChanges()
     MacroEditor.RefreshWidgets();
 end
 
+-- AceGUI's List/Flow layouts reserve height for every child regardless of Show/Hide
+-- state, so merely hiding a button still leaves a gap where it used to be. Collapse
+-- it to zero height instead, and restore `widget.naturalHeight` (captured once, right
+-- after the widget's initial layout in Create(), before it's ever hidden) when shown.
+local function SetShown(widget, shown)
+    if shown then
+        widget.frame:Show();
+        widget:SetHeight(widget.naturalHeight);
+    else
+        widget.frame:Hide();
+        -- Not an exact 0: AceGUI's own Label widget explicitly avoids that ("avoid
+        -- zero-height labels, since they can [be] used as spacers" - see
+        -- AceGUIWidget-Label.lua's UpdateImageAnchor) because a frame with truly
+        -- zero height breaks position/anchor resolution for whatever the "List"
+        -- layout anchors below it (confirmed live: the macro body box, anchored
+        -- transitively to one of these buttons, silently failed to render - shown,
+        -- visible, correct width/height, but GetTop()/GetLeft() both nil - only
+        -- when one of these buttons was collapsed to exactly 0).
+        widget:SetHeight(0.01);
+    end
+end
+
 -- AceGUI's "List" layout (used by MacroEditor.container) unconditionally shows every
 -- child's frame whenever it lays out, which happens any time the window is resized.
--- That would undo the Hide() calls below, so this is re-run after every layout pass
--- (see the LayoutFinished hook in Create()) instead of only from RefreshWidgets.
+-- That would undo the SetShown() calls below, so this is re-run after every layout
+-- pass (see the LayoutFinished hook in Create()) instead of only from RefreshWidgets.
 function MacroEditor.RefreshVisibility()
     local isReadOnly = MacroEditor.mode == "readonly";
 
+    SetShown(MacroEditor.saveButtonGroupWidget, not isReadOnly);
+    SetShown(MacroEditor.changeIconWidget, not isReadOnly);
+    SetShown(MacroEditor.resetIconWidget, not isReadOnly);
+    SetShown(MacroEditor.macroDeleteWidget, MacroEditor.mode == "edit");
+
     if isReadOnly then
-        MacroEditor.macroDeleteWidget.frame:Hide();
-        MacroEditor.macroSaveWidget.frame:Hide();
-        MacroEditor.discardWidget.frame:Hide();
-        MacroEditor.changeIconWidget.frame:Hide();
-        MacroEditor.resetIconWidget.frame:Hide();
         MacroEditor.readOnlyNoticeWidget.frame:Show();
     else
-        MacroEditor.macroSaveWidget.frame:Show();
-        MacroEditor.discardWidget.frame:Show();
-        MacroEditor.changeIconWidget.frame:Show();
-        MacroEditor.resetIconWidget.frame:Show();
         MacroEditor.readOnlyNoticeWidget.frame:Hide();
-
-        if MacroEditor.mode == "new" then
-            MacroEditor.macroDeleteWidget.frame:Hide();
-        else
-            MacroEditor.macroDeleteWidget.frame:Show();
-        end
     end
 end
 
@@ -390,6 +403,7 @@ function MacroEditor.Create()
     local changeIconButton = AceGUI:Create("Button");
     changeIconButton:SetText("Select Icon");
     changeIconButton:SetWidth(125);
+    changeIconButton.naturalHeight = changeIconButton.frame:GetHeight();
     changeIconButton:SetCallback("OnClick", function()
         MacroEditor.LoadIconPickerData();
         local lib = LibStub("LibAdvancedIconSelector-1.0-LMIS")    -- (ideally, this would be loaded on-demand)
@@ -414,6 +428,7 @@ function MacroEditor.Create()
     local useQuestionMarkIconButton = AceGUI:Create("Button");
     useQuestionMarkIconButton:SetText("Reset Icon (?)");
     useQuestionMarkIconButton:SetWidth(125);
+    useQuestionMarkIconButton.naturalHeight = useQuestionMarkIconButton.frame:GetHeight();
     useQuestionMarkIconButton:SetCallback("OnClick", function()
         macroIcon:SetImage("INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK");
         MacroEditor.selectedMacro.iconModified = true;
@@ -531,13 +546,27 @@ function MacroEditor.Create()
 
     local saveButtonGroup = AceGUI:Create("SimpleGroup");
     saveButtonGroup:SetLayout("Flow");
-    saveButtonGroup:SetFullWidth(true);
     saveButtonGroup:AddChild(saveButton);
     saveButtonGroup:AddChild(discardButton);
+    -- Not full-width: that would flag it as a "fill" child, which makes the outer
+    -- List layout re-trigger this group's own layout (and its auto-height-from-
+    -- content) on every resize, fighting the SetShown() height override below.
+    -- The default SimpleGroup width comfortably fits the two 100px buttons anyway.
+    saveButtonGroup.naturalHeight = saveButtonGroup.frame:GetHeight();
+    -- SimpleGroup is a container, so its .content frame gets a native OnSizeChanged
+    -- hook (see ContentResize/RegisterAsContainer in AceGUI-3.0.lua) that re-runs this
+    -- group's own Flow layout any time .content's real size changes -- including the
+    -- change caused by SetShown()'s SetHeight(0) below. That re-layout's LayoutFinished
+    -- unconditionally calls SetHeight(<natural height>) again (see AceGUIContainer-
+    -- SimpleGroup.lua), silently reverting our collapse a moment later. Disabling
+    -- auto-height stops that fight; must come *after* the natural height above is
+    -- captured, since that capture relies on the auto-height Flow computed for us.
+    saveButtonGroup:SetAutoAdjustHeight(false);
 
     local deleteButton = AceGUI:Create("Button");
     deleteButton:SetText("Delete");
     deleteButton:SetWidth(100);
+    deleteButton.naturalHeight = deleteButton.frame:GetHeight();
     deleteButton:SetCallback("OnClick", function()
         if MacroEditor.mode == "new" then
             -- Creating a new macro, can't delete it.
@@ -597,6 +626,7 @@ function MacroEditor.Create()
     MacroEditor.macroBodyWidget = macroBodyEditBox;
     MacroEditor.macroSaveWidget = saveButton;
     MacroEditor.discardWidget = discardButton;
+    MacroEditor.saveButtonGroupWidget = saveButtonGroup;
     MacroEditor.macroDeleteWidget = deleteButton;
     MacroEditor.changeIconWidget = changeIconButton;
     MacroEditor.resetIconWidget = useQuestionMarkIconButton;
