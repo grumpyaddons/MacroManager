@@ -1,4 +1,4 @@
-local Type, Version = "MacroManagerMultiLineEditBox", 32
+local Type, Version = "MacroManagerMultiLineEditBox", 33
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
@@ -131,6 +131,11 @@ end
 local function OnTextChanged(self, userInput)                                    -- EditBox
 	if userInput then
 		self = self.obj
+		if self.disabled then
+			-- Read-only: text stays selectable/copyable, but any attempted edit snaps back.
+			self.editBox:SetText(self.readOnlyText or "")
+			return
+		end
 		self:Fire("OnTextChanged", self.editBox:GetText())
 		self.button:Enable()
 	end
@@ -185,19 +190,18 @@ local methods = {
 	end,
 
 	["SetDisabled"] = function(self, disabled)
+		self.disabled = disabled
 		local editBox = self.editBox
 		if disabled then
-			editBox:ClearFocus()
-			editBox:EnableMouse(false)
+			-- Mouse stays enabled so the text remains selectable/copyable; edits are
+			-- reverted in OnTextChanged instead of blocking interaction outright.
+			self.readOnlyText = editBox:GetText()
 			editBox:SetTextColor(0.5, 0.5, 0.5)
 			self.label:SetTextColor(0.5, 0.5, 0.5)
-			self.scrollFrame:EnableMouse(false)
 			self.button:Disable()
 		else
-			editBox:EnableMouse(true)
 			editBox:SetTextColor(1, 1, 1)
 			self.label:SetTextColor(1, 0.82, 0)
-			self.scrollFrame:EnableMouse(true)
 		end
 	end,
 
@@ -224,6 +228,7 @@ local methods = {
 	end,
 
 	["SetText"] = function(self, text)
+		self.readOnlyText = text
 		self.editBox:SetText(text)
 	end,
 
@@ -312,6 +317,7 @@ local function Constructor()
 	scrollBG:SetBackdropBorderColor(0.4, 0.4, 0.4)
 
 	local scrollFrame = CreateFrame("ScrollFrame", ("%s%dScrollFrame"):format(Type, widgetNum), frame, "UIPanelScrollFrameTemplate")
+	scrollFrame:EnableMouse(true)
 
 	local scrollBar = _G[scrollFrame:GetName() .. "ScrollBar"]
 	scrollBar:ClearAllPoints()

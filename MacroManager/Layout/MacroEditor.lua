@@ -33,7 +33,11 @@ local MacroEditor = {
     macroIconWidget = nil,
     macroNameWidget = nil,
     macroBodyWidget = nil,
+    macroSaveWidget = nil,
     macroDeleteWidget = nil,
+    changeIconWidget = nil,
+    resetIconWidget = nil,
+    readOnlyNoticeWidget = nil,
 
     iconPicker = nil,
 
@@ -105,6 +109,23 @@ function MacroEditor.SetNewMode(macroName, macroIcon, macroBody)
     MacroEditor.RefreshWidgets();
 end
 
+-- "readonly" mode is used for browsing another character's macro snapshot. There's
+-- no live macro slot backing it, just the name/icon/body captured the last time
+-- that character logged in, so editing isn't possible.
+function MacroEditor.SetReadOnlyMode(characterName, macroName, macroIcon, macroBody)
+    MacroEditor.mode = "readonly";
+    MacroEditor.selectedMacro = {
+        index = nil,
+        type = "character",
+        name = macroName,
+        icon = macroIcon,
+        body = macroBody,
+        iconModified = false,
+        snapshotCharacterName = characterName
+    };
+    MacroEditor.RefreshWidgets();
+end
+
 function MacroEditor.RefreshWidgets()
     if MacroEditor.selectedMacro.icon then
         MacroEditor.macroIconWidget:SetImage(MacroEditor.selectedMacro.icon);
@@ -112,13 +133,18 @@ function MacroEditor.RefreshWidgets()
         MacroEditor.macroIconWidget:SetImage("INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK");
     end
 
+    local isReadOnly = MacroEditor.mode == "readonly";
+
     local isAccountMacro = MacroEditor.selectedMacro.type == "account";
     MacroEditor.macroTypeRadioButtons.accountMacroRadioButton:SetValue(isAccountMacro);
     MacroEditor.macroTypeRadioButtons.characterMacroRadioButton:SetValue(not isAccountMacro);
+    MacroEditor.macroTypeRadioButtons.accountMacroRadioButton:SetDisabled(isReadOnly);
+    MacroEditor.macroTypeRadioButtons.characterMacroRadioButton:SetDisabled(isReadOnly);
 
     -- Set edit box value and force OnTextChanged to update label with character count
     MacroEditor.macroNameWidget:SetText(MacroEditor.selectedMacro.name);
     MacroEditor.macroNameWidget:Fire("OnTextChanged");
+    MacroEditor.macroNameWidget:SetDisabled(isReadOnly);
 
     local macroBody = MacroEditor.selectedMacro.body;
     if not macroBody then
@@ -129,11 +155,29 @@ function MacroEditor.RefreshWidgets()
     -- Same as name widget update
     MacroEditor.macroBodyWidget:SetText(macroBody);
     MacroEditor.macroBodyWidget:Fire("OnTextChanged");
+    MacroEditor.macroBodyWidget:SetDisabled(isReadOnly);
 
-    if MacroEditor.mode == "new" then
+    if isReadOnly then
         MacroEditor.macroDeleteWidget.frame:Hide();
+        MacroEditor.macroSaveWidget.frame:Hide();
+        MacroEditor.changeIconWidget.frame:Hide();
+        MacroEditor.resetIconWidget.frame:Hide();
+        MacroEditor.readOnlyNoticeWidget:SetText(
+            "Read-only copy of a macro from "..MacroEditor.selectedMacro.snapshotCharacterName..
+            ", captured the last time that character logged in."
+        );
+        MacroEditor.readOnlyNoticeWidget.frame:Show();
     else
-        MacroEditor.macroDeleteWidget.frame:Show();
+        MacroEditor.macroSaveWidget.frame:Show();
+        MacroEditor.changeIconWidget.frame:Show();
+        MacroEditor.resetIconWidget.frame:Show();
+        MacroEditor.readOnlyNoticeWidget.frame:Hide();
+
+        if MacroEditor.mode == "new" then
+            MacroEditor.macroDeleteWidget.frame:Hide();
+        else
+            MacroEditor.macroDeleteWidget.frame:Show();
+        end
     end
 end
 
@@ -236,13 +280,13 @@ function MacroEditor.Create()
     macroIcon:SetImage("INTERFACE\\ICONS\\INV_MISC_QUESTIONMARK");
     macroIcon:SetImageSize(48, 48);
     macroIcon:SetCallback("OnClick", function()
-        if MacroEditor.mode ~= "new" then
+        if MacroEditor.mode == "edit" then
             PickupMacro(MacroEditor.selectedMacro.index);
         end;
     end);
     macroIcon.frame:RegisterForDrag("LeftButton")
     macroIcon.frame:SetScript("OnDragStart", function()
-        if MacroEditor.mode ~= "new" then
+        if MacroEditor.mode == "edit" then
             PickupMacro(MacroEditor.selectedMacro.index);
         end;
     end);
@@ -405,6 +449,11 @@ function MacroEditor.Create()
         end
     end);
 
+    local readOnlyNoticeLabel = AceGUI:Create("Label");
+    readOnlyNoticeLabel:SetFullWidth(true);
+    readOnlyNoticeLabel:SetColor(1, 0.82, 0);
+    readOnlyNoticeLabel:SetText("");
+
     local scroll = AceGUI:Create("ScrollFrame");
     scroll:SetLayout("List");
     scroll:SetFullWidth(true);
@@ -423,6 +472,7 @@ function MacroEditor.Create()
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(macroBodyEditBox);
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
+    scroll:AddChild(readOnlyNoticeLabel);
     scroll:AddChild(saveButton);
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(deleteButton);
@@ -440,7 +490,11 @@ function MacroEditor.Create()
     MacroEditor.macroIconWidget = macroIcon;
     MacroEditor.macroNameWidget = macroNameEditBox;
     MacroEditor.macroBodyWidget = macroBodyEditBox;
+    MacroEditor.macroSaveWidget = saveButton;
     MacroEditor.macroDeleteWidget = deleteButton;
+    MacroEditor.changeIconWidget = changeIconButton;
+    MacroEditor.resetIconWidget = useQuestionMarkIconButton;
+    MacroEditor.readOnlyNoticeWidget = readOnlyNoticeLabel;
 
     MacroEditor.container = scroll;
 end

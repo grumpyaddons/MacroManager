@@ -2,7 +2,7 @@
 TreeGroup Container
 Container that uses a tree control to switch between groups.
 -------------------------------------------------------------------------------]]
-local Type, Version = "MacroManagerTreeGroup", 47
+local Type, Version = "MacroManagerTreeGroup", 48
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
@@ -69,6 +69,7 @@ local function UpdateButton(button, treeline, selected, canExpand, isExpanded)
 	button.treeline = treeline
 	button.value = value
 	button.uniquevalue = uniquevalue
+	button.hasChildren = canExpand
 	if selected then
 		button:LockHighlight()
 		button.selected = true
@@ -94,12 +95,16 @@ local function UpdateButton(button, treeline, selected, canExpand, isExpanded)
     end
 
 	if disabled then
-		button:EnableMouse(false)
-		button.text:SetText("|cff808080"..text..FONT_COLOR_CODE_CLOSE)
+		local colorStr = treeline.classColor or "ffffd100"
+		button.text:SetText("|c"..colorStr..text..FONT_COLOR_CODE_CLOSE)
 	else
 		button.text:SetText(text)
-		button:EnableMouse(true)
 	end
+
+	-- Header rows (anything with children) stay clickable so the whole row can
+	-- expand/collapse the group, not just the tiny +/- toggle button. Other
+	-- disabled rows (e.g. the "None" placeholder) remain fully inert.
+	button:EnableMouse(not disabled or canExpand)
 
 	if icon then
 		button.icon:SetTexture(icon)
@@ -146,6 +151,7 @@ local function addLine(self, v, tree, level, parent)
 	line.value = v.value
 	line.text = v.text
     line.font = v.font
+	line.classColor = v.classColor
 	line.icon = v.icon
 	line.iconCoords = v.iconCoords
 	line.disabled = v.disabled
@@ -192,6 +198,16 @@ end
 
 local function Button_OnClick(frame)
 	local self = frame.obj
+
+	-- Clicking a header row toggles its expand state instead of trying to select it.
+	if frame.hasChildren then
+		local status = (self.status or self.localstatus).groups
+		status[frame.uniquevalue] = not status[frame.uniquevalue]
+		self:RefreshTree()
+		AceGUI:ClearFocus()
+		return
+	end
+
 	self:Fire("OnClick", frame.uniquevalue, frame.selected)
 	if not frame.selected then
 		self:SetSelected(frame.uniquevalue)

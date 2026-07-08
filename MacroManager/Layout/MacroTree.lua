@@ -2,8 +2,9 @@ local _, Private = ...;
 
 -- Contain accessing undefined variables to one place to remove linter warnings.
 local GetMacroInfo, GetNumMacros, PickupMacro = GetMacroInfo, GetNumMacros, PickupMacro;
-local GetTime, GetCurrentKeyBoardFocus, IsShiftKeyDown, UnitFullName = GetTime, GetCurrentKeyBoardFocus, IsShiftKeyDown, UnitFullName;
-local LibStub = LibStub;
+local GetTime, GetCurrentKeyBoardFocus, IsShiftKeyDown = GetTime, GetCurrentKeyBoardFocus, IsShiftKeyDown;
+local LibStub, strsplit = LibStub, strsplit;
+local RAID_CLASS_COLORS = RAID_CLASS_COLORS;
 
 local AceGUI = LibStub("AceGUI-3.0");
 
@@ -15,8 +16,16 @@ local MacroTree = {
 };
 
 function MacroTree.GetMacroTypeAndMacroIdFromUniqueValue(uniqueValue)
-    local macroType, macroIdString = ("\001"):split(uniqueValue);
-    return macroType, tonumber(macroIdString)
+    local parts = { strsplit("\001", uniqueValue) };
+    local macroType = parts[1];
+
+    -- Snapshot values are 3 parts: "snapshot", the character name, then the macro's
+    -- index within that character's stored snapshot.
+    if macroType == "snapshot" then
+        return macroType, tonumber(parts[3]), parts[2];
+    end
+
+    return macroType, tonumber(parts[2]);
 end
 
 function MacroTree.RefreshMacroFormBasedonSelectedTreeItem()
@@ -40,9 +49,9 @@ function MacroTree.GetSelectedMacroTypeAndId()
         if MacroTree.statusTable.selected == "new" then
             return "new", nil;
         end
-        local macroType, macroId = MacroTree.GetMacroTypeAndMacroIdFromUniqueValue(MacroTree.statusTable.selected);
+        local macroType, macroId, characterName = MacroTree.GetMacroTypeAndMacroIdFromUniqueValue(MacroTree.statusTable.selected);
 
-        return macroType, macroId;
+        return macroType, macroId, characterName;
     end
     -- Default to the new macro tab if nothing is selected.
     return "new", nil;
@@ -95,7 +104,21 @@ local function isempty(s)
     return s == nil or s == ''
 end
 
+-- Colors a tree row by the character's class, matching how class colors are
+-- used elsewhere in WoW's UI (friends list, guild roster, etc). Falls back to
+-- nil (default header color) if the class isn't known yet, e.g. an old
+-- snapshot captured before class tracking was added.
+local function ClassColorStr(characterName)
+    local classToken = Private.CharacterSnapshots.GetClass(characterName);
+    local color = classToken and RAID_CLASS_COLORS[classToken];
+    return color and color.colorStr;
+end
+
 function MacroTree.GenerateMacroTree()
+    -- Keep this character's read-only snapshot fresh any time we look at the tree,
+    -- not just at login.
+    Private.CharacterSnapshots.CaptureCurrentCharacter();
+
     local characterMacros = {};
     local accountMacros = {};
     local accountMacroCount, characterMacroCount = GetNumMacros();
@@ -147,6 +170,58 @@ function MacroTree.GenerateMacroTree()
         table.insert(characterMacros, noMacrosLabel);
     end
 
+    -- Read-only snapshots of every other character's character-specific macros,
+    -- captured the last time each of them logged in. The current character is
+    -- excluded since their live macros are already shown above.
+    local currentCharacterName = Private.CharacterSnapshots.GetFullCharacterName();
+    local snapshots = Private.CharacterSnapshots.GetAll();
+
+    local snapshotCharacterNames = {};
+    for characterName in pairs(snapshots) do
+        if characterName ~= currentCharacterName then
+            table.insert(snapshotCharacterNames, characterName);
+        end
+    end
+    table.sort(snapshotCharacterNames);
+
+    local snapshotGroups = {};
+    for _, characterName in ipairs(snapshotCharacterNames) do
+        local macros = Private.CharacterSnapshots.GetMacros(characterName);
+        local children = {};
+        local visibleCount = 0;
+
+        for index, macro in ipairs(macros) do
+            local data = {
+                value = index,
+                text = macro.name,
+                icon = macro.icon,
+                visible = isempty(MacroTree.filterString) or MatchesQuery(macro.name, MacroTree.filterString)
+            };
+            table.insert(children, data);
+            if data.visible == true then
+                visibleCount = visibleCount + 1
+            end
+        end
+
+        if visibleCount == 0 then
+            table.insert(children, noMacrosLabel);
+        end
+
+        table.insert(snapshotGroups, {
+            value = characterName,
+            text = characterName.." ("..#macros..")",
+            font = "GameFontHighlightSmall",
+            classColor = ClassColorStr(characterName),
+            disabled = true,
+            visible = true,
+            children = children
+        });
+    end
+
+    if #snapshotGroups == 0 then
+        table.insert(snapshotGroups, noMacrosLabel);
+    end
+
     local tree = {
         {
             value = "new",
@@ -154,8 +229,9 @@ function MacroTree.GenerateMacroTree()
         },
         {
             value = "character",
-            text = "Character Macros ("..characterMacroCount.."/18)",
+            text = currentCharacterName.." ("..characterMacroCount.."/18)",
             font = "GameFontHighlightSmall",
+            classColor = ClassColorStr(currentCharacterName),
             disabled = true,
             visible = true,
             children = characterMacros
@@ -167,6 +243,14 @@ function MacroTree.GenerateMacroTree()
             disabled = true,
             visible = true,
             children = accountMacros
+        },
+        {
+            value = "snapshot",
+            text = "Character Snapshots",
+            font = "GameFontHighlightSmall",
+            disabled = true,
+            visible = true,
+            children = snapshotGroups
         },
     };
 
@@ -186,31 +270,41 @@ function MacroTree.GenerateMacroTree()
 
         MacroTree.container.buttons[i]:RegisterForDrag("LeftButton")
         MacroTree.container.buttons[i]:SetScript("OnDragStart", function(self)
+            -- Snapshot entries aren't real macro slots on this character, and header
+            -- rows (group/character labels, now clickable to expand/collapse) have no
+            -- macroId at all, so there's nothing valid to pick up for either.
             local macroType, macroId = MacroTree.GetMacroTypeAndMacroIdFromUniqueValue(self.uniquevalue);
-            if macroType ~= "new" then
+            if macroId ~= nil and (macroType == "account" or macroType == "character") then
                 PickupMacro(macroId);
             end
         end);
 
         MacroTree.container.buttons[i]:SetScript("OnClick", function(self)
-            if (IsShiftKeyDown()) then
-                local _, macroId = MacroTree.GetMacroTypeAndMacroIdFromUniqueValue(self.uniquevalue);
-                local macroName, _, _ = GetMacroInfo(macroId);
-                local editbox = GetCurrentKeyBoardFocus();
-                local fullName = nil;
-                if(editbox) then
-                    if (not fullName) then
-                        local name, realm = UnitFullName("player")
-                        if realm then
-                            fullName = name.."-".. realm
-                        else
-                            fullName = name
-                        end
+            local macroType, macroId, characterName = MacroTree.GetMacroTypeAndMacroIdFromUniqueValue(self.uniquevalue);
+            if (IsShiftKeyDown()) and macroId ~= nil and (macroType == "account" or macroType == "character" or macroType == "snapshot") then
+                local macroName, snapshot;
+
+                if macroType == "snapshot" then
+                    local macro = Private.CharacterSnapshots.GetMacro(characterName, macroId);
+                    if not macro then
+                        return
                     end
+                    macroName = macro.name;
+                    -- Since the snapshot owner may not even be online, we serve this
+                    -- share request ourselves from our cached copy rather than asking
+                    -- them to fulfill it live.
+                    snapshot = { characterName = characterName, index = macroId };
+                else
+                    macroName = GetMacroInfo(macroId);
+                end
+
+                local editbox = GetCurrentKeyBoardFocus();
+                if(editbox) then
+                    local fullName = Private.CharacterSnapshots.GetFullCharacterName();
 
                     editbox:Insert("[MacroManager: "..fullName.." - "..macroName.."]");
                     Private.linked = Private.linked or {}
-                    Private.linked[macroName] = GetTime()
+                    Private.linked[macroName] = { time = GetTime(), snapshot = snapshot };
                 end
             else
                 previousOnClick(self);
@@ -238,11 +332,19 @@ function MacroTree.Create()
     macroTree:SetLayout("List");
     macroTree:SetFullHeight(true);
 
-    -- Expand groups by default
+    -- Back this with the saved-variable table (instead of the transient default
+    -- assigned above) so expand/collapse, search, and selection survive relogs.
+    MacroTree.statusTable = MacroManagerSaved.MacroManagerWindow.macroTreeStatusTable;
+
+    -- Expand groups by default. Only takes effect the first time this ever runs,
+    -- since after that `.groups` is already populated (and persisted).
     if not MacroTree.statusTable.groups then
         MacroTree.statusTable.groups = {};
         MacroTree.statusTable.groups["character"] = true;
         MacroTree.statusTable.groups["account"] = true;
+        -- Expand one level so the list of characters is visible; each
+        -- character's own macros still start collapsed.
+        MacroTree.statusTable.groups["snapshot"] = true;
     end
     macroTree:SetStatusTable(MacroTree.statusTable);
 
@@ -252,8 +354,8 @@ function MacroTree.Create()
 
     macroTree:SetCallback("OnGroupSelected", function()
         if MacroTree.onSelectedCallback then
-            local macroType, macroId = MacroTree.GetSelectedMacroTypeAndId();
-            MacroTree.onSelectedCallback(macroType, macroId);
+            local macroType, macroId, characterName = MacroTree.GetSelectedMacroTypeAndId();
+            MacroTree.onSelectedCallback(macroType, macroId, characterName);
         end
     end);
 

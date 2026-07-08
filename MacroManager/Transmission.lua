@@ -361,12 +361,30 @@ function StringToTable(inString, fromChat)
 end
 Private.StringToTable = StringToTable
 
-function Private.DisplayToString(id, forChat)
-  local data = {}
-  local macroName, macroTexture, macroBody = GetMacroInfo(id);
-  data.macroName = macroName
-  data.macroTexture = macroTexture
-  data.macroBody = macroBody
+-- `snapshot`, when provided, is a { characterName, index } pair identifying a
+-- cached macro snapshot to serve instead of a live macro slot on this character.
+function Private.DisplayToString(id, forChat, snapshot)
+  local macroName, macroTexture, macroBody;
+
+  if snapshot then
+    local macro = Private.CharacterSnapshots.GetMacro(snapshot.characterName, snapshot.index);
+    if macro then
+      macroName, macroTexture, macroBody = macro.name, macro.icon, macro.body;
+    end
+  else
+    macroName, macroTexture, macroBody = GetMacroInfo(id);
+  end
+
+  if not macroName then
+    return "";
+  end
+
+  local data = {
+    macroName = macroName,
+    macroTexture = macroTexture,
+    macroBody = macroBody
+  };
+
   if(data) then
     data.uid = data.uid or GenerateUniqueID()
     -- Check which transmission version we want to use
@@ -571,8 +589,8 @@ function TransmitError(errorMsg, characterName)
   crossRealmSendCommMessage("MacroManager", TableToString(transmit), characterName);
 end
 
-function TransmitDisplay(id, characterName)
-  local encoded = Private.DisplayToString(id);
+function TransmitDisplay(id, characterName, snapshot)
+  local encoded = Private.DisplayToString(id, nil, snapshot);
   if(encoded ~= "") then
     crossRealmSendCommMessage("MacroManager", encoded, characterName, "BULK", function(displayName, done, total)
       crossRealmSendCommMessage("MacroManagerProg", done.." "..total.." "..displayName, characterName, "ALERT");
@@ -632,8 +650,8 @@ Comm:RegisterComm("MacroManager", function(prefix, message, distribution, sender
   local validLink = false
   if Private.linked then
     local expiredLinkTime = GetTime() - linkValidityDuration
-    for id, time in pairs(Private.linked) do
-      if time > expiredLinkTime then
+    for id, entry in pairs(Private.linked) do
+      if entry.time > expiredLinkTime then
         validLink = true
       end
     end
@@ -650,8 +668,9 @@ Comm:RegisterComm("MacroManager", function(prefix, message, distribution, sender
       ItemRefTooltip:Hide()
       ImportNow(data, children, nil, sender)
     elseif(received.m == "dR") then
-      if(Private.linked and Private.linked[received.d] and Private.linked[received.d] > GetTime() - linkValidityDuration) then
-        TransmitDisplay(received.d, sender);
+      local linkedEntry = Private.linked and Private.linked[received.d];
+      if(linkedEntry and linkedEntry.time > GetTime() - linkValidityDuration) then
+        TransmitDisplay(received.d, sender, linkedEntry.snapshot);
       end
     elseif(received.m == "dE") then
       tooltipLoading = nil;

@@ -41,13 +41,28 @@ function main.WireUpWidgets()
     Private.Layout.MacroEditor.CreateIfNotCreated();
     Private.Layout.MacroTree.CreateIfNotCreated();
 
-    Private.Layout.MacroTree.SetOnSelectedCallback(function(macroType, macroId)
+    local function OnMacroTreeSelected(macroType, macroId, characterName)
         if macroType == "new" then
             Private.Layout.MacroEditor.SetNewMode()
+        elseif macroType == "snapshot" then
+            local macro = Private.CharacterSnapshots.GetMacro(characterName, macroId);
+            if macro then
+                Private.Layout.MacroEditor.SetReadOnlyMode(characterName, macro.name, macro.icon, macro.body);
+            end
         else
             Private.Layout.MacroEditor.SetEditModeByMacroId(macroId);
         end
-    end);
+    end
+
+    Private.Layout.MacroTree.SetOnSelectedCallback(OnMacroTreeSelected);
+
+    -- The tree's selection can already be populated here (e.g. restored from
+    -- SavedVariables after a UI reload), but the tree widget only fires
+    -- OnGroupSelected on an actual selection *change*. Sync the editor to
+    -- whatever's already selected so it doesn't sit blank until the user
+    -- clicks something.
+    OnMacroTreeSelected(Private.Layout.MacroTree.GetSelectedMacroTypeAndId());
+
     Private.Layout.MacroEditor.SetOnMacroSaveCallback(function(macroType, macroId)
         Private.Layout.MacroTree.SelectMacro(macroType, macroId);
         Private.Layout.MacroTree.GenerateMacroTree();
