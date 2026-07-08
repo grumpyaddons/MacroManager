@@ -1,4 +1,4 @@
-local Type, Version = "MacroManagerMultiLineEditBox", 33
+local Type, Version = "MacroManagerMultiLineEditBox", 34
 local AceGUI = LibStub and LibStub("AceGUI-3.0", true)
 if not AceGUI or (AceGUI:GetWidgetVersion(Type) or 0) >= Version then return end
 
@@ -132,8 +132,12 @@ local function OnTextChanged(self, userInput)                                   
 	if userInput then
 		self = self.obj
 		if self.disabled then
-			-- Read-only: text stays selectable/copyable, but any attempted edit snaps back.
+			-- Read-only: text stays selectable/copyable, but any attempted edit snaps
+			-- back. SetText's OnTextSet handler always resets the cursor to the start,
+			-- so restore it to roughly where the user was instead of leaving it there.
+			local cursorPosition = self.editBox:GetCursorPosition()
 			self.editBox:SetText(self.readOnlyText or "")
+			self.editBox:SetCursorPosition(math.min(cursorPosition, self.editBox:GetNumLetters()))
 			return
 		end
 		self:Fire("OnTextChanged", self.editBox:GetText())
