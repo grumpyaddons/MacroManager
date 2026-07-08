@@ -177,6 +177,11 @@ function MacroEditor.RefreshWidgets()
             "Read-only copy of a macro from "..MacroEditor.selectedMacro.snapshotCharacterName..
             ", captured the last time that character logged in."
         );
+    else
+        -- Clear the text so the (hidden) label collapses back down to AceGUI's
+        -- minimal label height instead of leaving a gap sized for whatever
+        -- read-only message was shown last.
+        MacroEditor.readOnlyNoticeWidget:SetText("");
     end
 
     MacroEditor.RefreshVisibility();
@@ -572,10 +577,10 @@ function MacroEditor.Create()
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(macroBodyEditBox);
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
-    scroll:AddChild(readOnlyNoticeLabel);
     scroll:AddChild(saveButtonGroup);
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(deleteButton);
+    scroll:AddChild(readOnlyNoticeLabel);
 
     local shareInfoLabel = AceGUI:Create("Label");
     shareInfoLabel:SetFullWidth(true);
