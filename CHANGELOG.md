@@ -1,3 +1,7 @@
+#### v0.2.0
+- Add read-only character macro snapshots: browse and share any character's macros from any other character, even while they're offline.
+- Fix read-only notice showing up after resizing the window when not viewing a snapshot.
+
 #### v0.1.2
 - Fix icon browser search on modern clients (@IchanP in #7).
 - Fix character counters miscounting non-Latin text (#2).
