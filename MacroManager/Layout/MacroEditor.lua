@@ -6,6 +6,7 @@ local LoadAddOn, EnableAddOn, StaticPopup_Show, StaticPopupDialogs = LoadAddOn, 
 local GameFontNormalSmall = GameFontNormalSmall;
 local LibStub = LibStub;
 local UIParent = UIParent;
+local MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS = MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS;
 
 if C_AddOns.LoadAddOn then
     LoadAddOn = C_AddOns.LoadAddOn
@@ -510,16 +511,16 @@ function MacroEditor.Create()
 
         local newMacroId;
         if MacroEditor.mode == "new" then
-            if MacroEditor.selectedMacro.type == "character" and characterMacroCount == 18 then
+            if MacroEditor.selectedMacro.type == "character" and characterMacroCount == MAX_CHARACTER_MACROS then
                 StaticPopup_Show(
                     "MACRO_SAVE_ERROR",
-                    "You can only have 18 character macros. Delete one before creating a new one."
+                    "You can only have "..MAX_CHARACTER_MACROS.." character macros. Delete one before creating a new one."
                 );
                 return
-            elseif MacroEditor.selectedMacro.type == "account" and accountMacroCount == 120 then
+            elseif MacroEditor.selectedMacro.type == "account" and accountMacroCount == MAX_ACCOUNT_MACROS then
                 StaticPopup_Show(
                     "MACRO_SAVE_ERROR",
-                    "You can only have 120 account macros. Delete one before creating a new one."
+                    "You can only have "..MAX_ACCOUNT_MACROS.." account macros. Delete one before creating a new one."
                 );
                 return
             end
@@ -542,16 +543,16 @@ function MacroEditor.Create()
                 -- Macro type changed, delete and add new macro because macro API
                 -- doesn't support editing macro type.
                 -- But first, check to make sure you can create new macros of tha type.
-                if MacroEditor.selectedMacro.type == "character" and characterMacroCount == 18 then
+                if MacroEditor.selectedMacro.type == "character" and characterMacroCount == MAX_CHARACTER_MACROS then
                     StaticPopup_Show(
                         "MACRO_SAVE_ERROR",
-                        "You can only have 18 character macros. Delete one before creating a new one."
+                        "You can only have "..MAX_CHARACTER_MACROS.." character macros. Delete one before creating a new one."
                     );
                     return
-                elseif MacroEditor.selectedMacro.type == "account" and accountMacroCount == 120 then
+                elseif MacroEditor.selectedMacro.type == "account" and accountMacroCount == MAX_ACCOUNT_MACROS then
                     StaticPopup_Show(
                         "MACRO_SAVE_ERROR",
-                        "You can only have 120 account macros. Delete one before creating a new one."
+                        "You can only have "..MAX_ACCOUNT_MACROS.." account macros. Delete one before creating a new one."
                     );
                     return
                 end

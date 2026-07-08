@@ -2,6 +2,7 @@ local _, Private = ...;
 
 -- Contain accessing undefined variables to one place to remove linter warnings.
 local GetMacroInfo, GetNumMacros, UnitFullName, UnitClass = GetMacroInfo, GetNumMacros, UnitFullName, UnitClass;
+local MAX_ACCOUNT_MACROS = MAX_ACCOUNT_MACROS;
 
 local CharacterSnapshots = {};
 
@@ -13,17 +14,17 @@ function CharacterSnapshots.GetFullCharacterName()
     return name;
 end
 
--- Captures the current character's character-specific macros (slots 121-138) into
--- the account-wide saved variables, keyed by full character name. Since
--- MacroManagerSaved is shared across every character on the account, this is what
--- lets other characters browse a read-only copy of it later.
+-- Captures the current character's character-specific macros (the slots after all
+-- account macros) into the account-wide saved variables, keyed by full character
+-- name. Since MacroManagerSaved is shared across every character on the account,
+-- this is what lets other characters browse a read-only copy of it later.
 function CharacterSnapshots.CaptureCurrentCharacter()
     MacroManagerSaved.CharacterMacroSnapshots = MacroManagerSaved.CharacterMacroSnapshots or {};
 
     local _, characterMacroCount = GetNumMacros();
 
     local macros = {};
-    for i = 121, characterMacroCount + 120 do
+    for i = MAX_ACCOUNT_MACROS + 1, characterMacroCount + MAX_ACCOUNT_MACROS do
         local macroName, icon, macroBody = GetMacroInfo(i);
         table.insert(macros, { name = macroName, icon = icon, body = macroBody });
     end

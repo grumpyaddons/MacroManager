@@ -5,6 +5,7 @@ local GetMacroInfo, GetNumMacros, PickupMacro = GetMacroInfo, GetNumMacros, Pick
 local GetTime, GetCurrentKeyBoardFocus, IsShiftKeyDown = GetTime, GetCurrentKeyBoardFocus, IsShiftKeyDown;
 local LibStub, strsplit = LibStub, strsplit;
 local RAID_CLASS_COLORS = RAID_CLASS_COLORS;
+local MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS = MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS;
 
 local AceGUI = LibStub("AceGUI-3.0");
 
@@ -76,9 +77,9 @@ function MacroTree.SelectMacro(macroType, macroId)
     -- Handle deleting the last macro in the character or account list.
     -- The behavior we expect is the selected item to be the previous one.
     if macroType == "character" then
-        -- Offset character macros ID by 120 since that's the id they start at.
-        if (macroId - 120) > characterMacroCount then
-            idToSelect = characterMacroCount + 120;
+        -- Character macro IDs start right after the account macros.
+        if (macroId - MAX_ACCOUNT_MACROS) > characterMacroCount then
+            idToSelect = characterMacroCount + MAX_ACCOUNT_MACROS;
         end
     elseif macroId > accountMacroCount then
         idToSelect = accountMacroCount
@@ -124,7 +125,7 @@ function MacroTree.GenerateMacroTree()
     local accountMacroCount, characterMacroCount = GetNumMacros();
 
     local accountMacrosVisible = 0;
-    -- Account macros start at index 1 through 120
+    -- Account macros occupy indices 1 through MAX_ACCOUNT_MACROS
     for i=1, accountMacroCount do
         local name, texture, _ = GetMacroInfo(i);
         local data = {
@@ -140,8 +141,8 @@ function MacroTree.GenerateMacroTree()
     end
 
     local characterMacrosVisible = 0;
-    -- Character macros start at index 121 through 138
-    for i=121, characterMacroCount + 120 do
+    -- Character macros start right after the account macros
+    for i=MAX_ACCOUNT_MACROS + 1, characterMacroCount + MAX_ACCOUNT_MACROS do
         local name, texture, _ = GetMacroInfo(i);
         local data = {
             value = i,
@@ -209,7 +210,7 @@ function MacroTree.GenerateMacroTree()
 
         table.insert(snapshotGroups, {
             value = characterName,
-            text = characterName.." ("..#macros..")",
+            text = characterName.." ("..#macros.."/"..MAX_CHARACTER_MACROS..")",
             font = "GameFontHighlightSmall",
             classColor = ClassColorStr(characterName),
             disabled = true,
@@ -229,7 +230,7 @@ function MacroTree.GenerateMacroTree()
         },
         {
             value = "character",
-            text = currentCharacterName.." ("..characterMacroCount.."/18)",
+            text = currentCharacterName.." ("..characterMacroCount.."/"..MAX_CHARACTER_MACROS..")",
             font = "GameFontHighlightSmall",
             classColor = ClassColorStr(currentCharacterName),
             disabled = true,
@@ -238,7 +239,7 @@ function MacroTree.GenerateMacroTree()
         },
         {
             value = "account",
-            text = "Account Macros ("..accountMacroCount.."/120)",
+            text = "Account Macros ("..accountMacroCount.."/"..MAX_ACCOUNT_MACROS..")",
             font = "GameFontHighlightSmall",
             disabled = true,
             visible = true,
