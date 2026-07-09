@@ -39,7 +39,7 @@ do
 	end
 end
 
-local DEFAULT_TREE_WIDTH = 190
+local DEFAULT_TREE_WIDTH = 225
 local DEFAULT_TREE_SIZABLE = true
 
 --[[-----------------------------------------------------------------------------
