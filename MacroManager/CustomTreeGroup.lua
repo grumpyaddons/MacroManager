@@ -116,7 +116,7 @@ local function UpdateButton(button, treeline, selected, canExpand, isExpanded)
 
 	if icon then
 		button.icon:SetTexture(icon)
-		button.icon:SetPoint("LEFT", 8 * level, (level == 1) and 0 or 1)
+		button.icon:SetPoint("LEFT", 8 * level, 2)
 	else
 		button.icon:SetTexture(nil)
 	end

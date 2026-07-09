@@ -229,7 +229,8 @@ function MacroTree.GenerateMacroTree()
     local tree = {
         {
             value = "new",
-            text = "+ New Macro"
+            text = "New Macro",
+            icon = "Interface\\Icons\\Spell_ChargePositive"
         },
         {
             value = "character",
