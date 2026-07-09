@@ -11,6 +11,7 @@ ignore:
   - AGENTS.md
   - ui.png
   - linking-macro.png
+  - ui-character-macro-snapshot.png
 
 manual-changelog:
   filename: CHANGELOG.md
