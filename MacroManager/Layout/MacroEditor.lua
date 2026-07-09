@@ -42,6 +42,16 @@ local MacroEditor = {
     iconButtonGroupWidget = nil,
     readOnlyNoticeWidget = nil,
     copyButtonGroupWidget = nil,
+    -- copyButtonGroup plus its own trailing separator - added/removed as a pair, see
+    -- SetIncludedInList.
+    copyButtonGroupWidgets = nil,
+    -- The widgets in copyButtonGroupWidgets are inserted immediately before this,
+    -- when included.
+    copyButtonGroupAnchorWidget = nil,
+    -- Whether copyButtonGroup is currently in MacroEditor.container's child list (see
+    -- RefreshVisibility - it's added/removed outright rather than collapsed to a
+    -- near-zero height like the other conditional widgets in this file).
+    copyButtonGroupIncluded = false,
 
     -- Snapshot of the macro as last loaded/saved/discarded. Save/Discard are only
     -- enabled when the live widgets have drifted from this baseline.
@@ -314,6 +324,36 @@ local function SetShownInRow(widget, shown)
     end
 end
 
+-- copyButtonGroup's collapsed (SetShown(false)) height wasn't matching its shown
+-- height reliably (see git history), unlike every other collapsed widget in this
+-- file - rather than chase that further, sidestep the collapse trick for it
+-- entirely: actually add/remove it from the container's child list, so it takes
+-- exactly zero space when not applicable instead of relying on a near-zero height
+-- that AceGUI's Flow layout was computing inconsistently.
+--
+-- Takes a list of widgets (copyButtonGroup plus its own trailing separator, added/
+-- removed as a pair) so read-only mode gets the same one-separator-between-every-
+-- row spacing as everywhere else in this editor, instead of butting copyButtonGroup
+-- directly against saveButtonGroup.
+local function SetIncludedInList(container, widgets, anchorWidget, included)
+    if included then
+        for _, widget in ipairs(widgets) do
+            container:AddChild(widget, anchorWidget);
+        end
+    else
+        for _, widget in ipairs(widgets) do
+            for i, child in ipairs(container.children) do
+                if child == widget then
+                    table.remove(container.children, i);
+                    break;
+                end
+            end
+            widget.frame:Hide();
+        end
+        container:DoLayout();
+    end
+end
+
 -- AceGUI's "List" layout (used by MacroEditor.container) unconditionally shows every
 -- child's frame whenever it lays out, which happens any time the window is resized.
 -- That would undo the SetShown() calls below, so this is re-run after every layout
@@ -327,8 +367,21 @@ function MacroEditor.RefreshVisibility()
     SetShownInRow(MacroEditor.macroSaveWidget, not isReadOnly);
     SetShownInRow(MacroEditor.discardWidget, not isReadOnly);
     SetShown(MacroEditor.iconButtonGroupWidget, not isReadOnly);
-    SetShown(MacroEditor.copyButtonGroupWidget, isReadOnly);
     SetShown(MacroEditor.macroDeleteWidget, MacroEditor.mode == "edit");
+
+    if isReadOnly ~= MacroEditor.copyButtonGroupIncluded then
+        -- Set the flag before calling out: AddChild/DoLayout below synchronously
+        -- re-enters this function (via the LayoutFinished hook in Create()), and if
+        -- the flag were still stale at that point, the re-entrant call would see the
+        -- same mismatch and insert/remove copyButtonGroup a second time.
+        MacroEditor.copyButtonGroupIncluded = isReadOnly;
+        SetIncludedInList(
+            MacroEditor.container,
+            MacroEditor.copyButtonGroupWidgets,
+            MacroEditor.copyButtonGroupAnchorWidget,
+            isReadOnly
+        );
+    end
 
     if isReadOnly then
         MacroEditor.readOnlyNoticeWidget.frame:Show();
@@ -699,9 +752,9 @@ function MacroEditor.Create()
     copyButtonGroup:SetWidth(320);
     copyButtonGroup:AddChild(copyToCharacterButton);
     copyButtonGroup:AddChild(copyToAccountButton);
-    copyButtonGroup.naturalHeight = copyButtonGroup.frame:GetHeight();
-    -- See iconButtonGroup above for why auto-height has to be disabled here too.
-    copyButtonGroup:SetAutoAdjustHeight(false);
+    -- Not added to the scroll here - RefreshVisibility adds/removes it from the child
+    -- list outright depending on mode (see SetIncludedInList above), instead of the
+    -- collapse-to-near-zero-height trick used for the other conditional widgets here.
 
     local saveButtonGroup = AceGUI:Create("SimpleGroup");
     saveButtonGroup:SetLayout("Flow");
@@ -760,12 +813,11 @@ function MacroEditor.Create()
     scroll:AddChild(iconButtonGroup);
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(macroBodyEditBox);
-    scroll:AddChild(MacroEditor.CreateSeparatorLabel());
-    scroll:AddChild(copyButtonGroup);
-    scroll:AddChild(MacroEditor.CreateSeparatorLabel());
+    -- copyButtonGroup is inserted here, immediately before saveButtonGroup, by
+    -- RefreshVisibility when in read-only mode. See SetIncludedInList.
     scroll:AddChild(saveButtonGroup);
-    scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(deleteButton);
+    scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(readOnlyNoticeLabel);
 
     local shareInfoLabel = AceGUI:Create("Label");
@@ -788,6 +840,8 @@ function MacroEditor.Create()
     MacroEditor.iconButtonGroupWidget = iconButtonGroup;
     MacroEditor.readOnlyNoticeWidget = readOnlyNoticeLabel;
     MacroEditor.copyButtonGroupWidget = copyButtonGroup;
+    MacroEditor.copyButtonGroupWidgets = { copyButtonGroup };
+    MacroEditor.copyButtonGroupAnchorWidget = saveButtonGroup;
 
     -- Re-apply widget visibility after every layout pass (e.g. window resize), since
     -- AceGUI's List layout unconditionally re-shows every child frame. Wrap rather than
