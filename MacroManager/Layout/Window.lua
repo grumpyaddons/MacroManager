@@ -42,6 +42,20 @@ function MacroManagerWindow.Create()
     -- so that it is closed when the escape key is pressed.
     tinsert(UISpecialFrames, "MacroManagerFrame");
 
+    -- Nested resizable children (the macro tree/editor divider's own StartSizing-based
+    -- drag) don't track the mouse at all until this top-level frame has gone through one
+    -- real StartMoving/StopMovingOrSizing cycle - confirmed by testing: on a fresh load,
+    -- dragging the divider does nothing until the window itself is first moved or
+    -- resized once. Simulate that cycle automatically instead of requiring the user to
+    -- do it manually. Has to wait a frame - doing it immediately, before the window has
+    -- ever been drawn, doesn't have the same effect (same reason MacroManagerTreeGroup's
+    -- own FirstFrameUpdate exists).
+    windowWidget.frame:SetScript("OnUpdate", function(self)
+        self:SetScript("OnUpdate", nil);
+        self:StartMoving();
+        self:StopMovingOrSizing();
+    end);
+
     MacroManagerWindow.container = windowWidget;
 end
 

@@ -268,6 +268,12 @@ local function OnScrollValueChanged(frame, value)
 end
 
 local function Tree_OnSizeChanged(frame)
+	-- Dragging the divider live-resizes treeframe many times a second (see
+	-- Dragger_OnMouseDown/Up below); rebuilding the tree on every one of those
+	-- ticks - on top of the same thing happening to the content pane via DoLayout
+	-- - is what makes both panes blank out mid-drag. Skip it until the drag ends,
+	-- where a single clean RefreshTree/DoLayout pass already happens.
+	if frame.obj.dragging then return end
 	frame.obj:RefreshTree()
 end
 
@@ -294,6 +300,7 @@ end
 
 local function Dragger_OnMouseDown(frame)
 	local treeframe = frame:GetParent()
+	treeframe.obj.dragging = true
 	treeframe:StartSizing("RIGHT")
 end
 
@@ -301,6 +308,7 @@ local function Dragger_OnMouseUp(frame)
 	local treeframe = frame:GetParent()
 	local self = treeframe.obj
 	local treeframeParent = treeframe:GetParent()
+	self.dragging = false
 	treeframe:StopMovingOrSizing()
 	--treeframe:SetScript("OnUpdate", nil)
 	treeframe:SetUserPlaced(false)
@@ -333,6 +341,9 @@ local methods = {
 	["OnRelease"] = function(self)
 		self.status = nil
 		self.tree = nil
+		-- In case this gets released mid-drag (dragger's OnMouseUp never fires): don't
+		-- leave a recycled widget instance permanently stuck skipping layout.
+		self.dragging = nil
 		self.frame:SetScript("OnUpdate", nil)
 		for k, v in pairs(self.localstatus) do
 			if k == "groups" then
@@ -584,6 +595,14 @@ local methods = {
 				self.buttons[1]:SetPoint("TOPRIGHT", self.treeframe,"TOPRIGHT",0,-10)
 			end
 		end
+	end,
+
+	-- Guards against the generic content-pane DoLayout cascade (see Tree_OnSizeChanged
+	-- above for why - the same live-resize-during-drag problem, but for the right pane
+	-- instead of the tree). self.base is set by AceGUI:RegisterAsContainer.
+	["DoLayout"] = function(self)
+		if self.dragging then return end
+		self.base.DoLayout(self)
 	end,
 
 	["OnWidthSet"] = function(self, width)
