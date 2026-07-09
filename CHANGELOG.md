@@ -1,4 +1,4 @@
-#### Unreleased
+#### v0.3.0
 - Add Copy to Character and Copy to Account buttons when viewing a read-only macro snapshot, to pull another character's macro into your own collection.
 - Fix the tree/editor divider not being draggable on a fresh window load (needed the window itself moved or resized first), and both panes briefly going blank while dragging it.
 
