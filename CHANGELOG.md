@@ -1,3 +1,6 @@
+#### Unreleased
+- Add Copy to Character and Copy to Account buttons when viewing a read-only macro snapshot, to pull another character's macro into your own collection.
+
 #### v0.2.0
 - Add read-only character macro snapshots: browse and share any character's macros from any other character, even while they're offline.
 - Add Discard and Select Body buttons to the macro editor.

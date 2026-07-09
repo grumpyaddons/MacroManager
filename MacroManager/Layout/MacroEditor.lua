@@ -6,6 +6,7 @@ local LoadAddOn, EnableAddOn, StaticPopup_Show, StaticPopupDialogs = LoadAddOn, 
 local GameFontNormalSmall = GameFontNormalSmall;
 local LibStub = LibStub;
 local UIParent = UIParent;
+local UnitName, UnitClass, RAID_CLASS_COLORS = UnitName, UnitClass, RAID_CLASS_COLORS;
 local MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS = MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS;
 
 if C_AddOns.LoadAddOn then
@@ -40,6 +41,7 @@ local MacroEditor = {
     macroDeleteWidget = nil,
     iconButtonGroupWidget = nil,
     readOnlyNoticeWidget = nil,
+    copyButtonGroupWidget = nil,
 
     -- Snapshot of the macro as last loaded/saved/discarded. Save/Discard are only
     -- enabled when the live widgets have drifted from this baseline.
@@ -239,6 +241,43 @@ function MacroEditor.DiscardChanges()
     MacroEditor.RefreshWidgets();
 end
 
+-- Copies the read-only macro currently being viewed (someone else's snapshot) into a
+-- real macro slot - either this character's or the shared account pool - then switches
+-- into "edit" mode on the new copy so it's no longer just a look-but-don't-touch snapshot.
+function MacroEditor.CopyReadOnlyMacroTo(macroType)
+    local accountMacroCount, characterMacroCount = GetNumMacros();
+    if macroType == "character" and characterMacroCount == MAX_CHARACTER_MACROS then
+        StaticPopup_Show(
+            "MACRO_SAVE_ERROR",
+            "You can only have "..MAX_CHARACTER_MACROS.." character macros. Delete one before creating a new one."
+        );
+        return;
+    elseif macroType == "account" and accountMacroCount == MAX_ACCOUNT_MACROS then
+        StaticPopup_Show(
+            "MACRO_SAVE_ERROR",
+            "You can only have "..MAX_ACCOUNT_MACROS.." account macros. Delete one before creating a new one."
+        );
+        return;
+    end
+
+    local name = MacroEditor.selectedMacro.name;
+    local icon = MacroEditor.selectedMacro.icon;
+    -- CreateMacro's body param, like the name/body edit boxes elsewhere in this file
+    -- (see RefreshWidgets), shouldn't be handed a nil.
+    local body = MacroEditor.selectedMacro.body or "";
+
+    -- Same question-mark normalization the Save button does (see its OnClick): CreateMacro
+    -- only auto-detects a #showtooltip macro's icon when given the string form of the
+    -- question mark icon, not its numeric texture ID.
+    if icon == 134400 then
+        icon = "INV_MISC_QUESTIONMARK";
+    end
+
+    local newMacroId = CreateMacro(name, icon, body, macroType == "character");
+    MacroEditor.SetEditMode(newMacroId, name, icon, body);
+    MacroEditor.OnMacroSaveCallback(macroType, newMacroId);
+end
+
 -- AceGUI's List/Flow layouts reserve height for every child regardless of Show/Hide
 -- state, so merely hiding a button still leaves a gap where it used to be. Collapse
 -- it to zero height instead, and restore `widget.naturalHeight` (captured once, right
@@ -288,6 +327,7 @@ function MacroEditor.RefreshVisibility()
     SetShownInRow(MacroEditor.macroSaveWidget, not isReadOnly);
     SetShownInRow(MacroEditor.discardWidget, not isReadOnly);
     SetShown(MacroEditor.iconButtonGroupWidget, not isReadOnly);
+    SetShown(MacroEditor.copyButtonGroupWidget, isReadOnly);
     SetShown(MacroEditor.macroDeleteWidget, MacroEditor.mode == "edit");
 
     if isReadOnly then
@@ -629,6 +669,40 @@ function MacroEditor.Create()
         MacroEditor.DiscardChanges();
     end);
 
+    -- Only shown in read-only mode (see RefreshVisibility), letting the viewer pull
+    -- someone else's snapshotted macro into a real slot of their own.
+    local playerName = UnitName("player");
+    local _, classFilename = UnitClass("player");
+    local classColor = RAID_CLASS_COLORS[classFilename];
+    -- FontString:SetText renders |c/|r color codes directly, so only the name itself
+    -- (not "Copy to ") picks up the class color.
+    local coloredPlayerName = classColor and ("|c"..classColor.colorStr..playerName.."|r") or playerName;
+
+    local copyToCharacterButton = AceGUI:Create("Button");
+    copyToCharacterButton:SetText("Copy to "..coloredPlayerName);
+    copyToCharacterButton:SetWidth(150);
+    copyToCharacterButton:SetCallback("OnClick", function()
+        MacroEditor.CopyReadOnlyMacroTo("character");
+    end);
+
+    local copyToAccountButton = AceGUI:Create("Button");
+    copyToAccountButton:SetText("Copy to Account");
+    copyToAccountButton:SetWidth(150);
+    copyToAccountButton:SetCallback("OnClick", function()
+        MacroEditor.CopyReadOnlyMacroTo("account");
+    end);
+
+    local copyButtonGroup = AceGUI:Create("SimpleGroup");
+    copyButtonGroup:SetLayout("Flow");
+    -- Explicit width (see iconButtonGroup above for why) so both buttons (150+150=300)
+    -- stay on one row.
+    copyButtonGroup:SetWidth(320);
+    copyButtonGroup:AddChild(copyToCharacterButton);
+    copyButtonGroup:AddChild(copyToAccountButton);
+    copyButtonGroup.naturalHeight = copyButtonGroup.frame:GetHeight();
+    -- See iconButtonGroup above for why auto-height has to be disabled here too.
+    copyButtonGroup:SetAutoAdjustHeight(false);
+
     local saveButtonGroup = AceGUI:Create("SimpleGroup");
     saveButtonGroup:SetLayout("Flow");
     -- Explicit width (rather than the 300px default, and set before AddChild since
@@ -687,6 +761,8 @@ function MacroEditor.Create()
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(macroBodyEditBox);
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
+    scroll:AddChild(copyButtonGroup);
+    scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(saveButtonGroup);
     scroll:AddChild(MacroEditor.CreateSeparatorLabel());
     scroll:AddChild(deleteButton);
@@ -711,6 +787,7 @@ function MacroEditor.Create()
     MacroEditor.macroDeleteWidget = deleteButton;
     MacroEditor.iconButtonGroupWidget = iconButtonGroup;
     MacroEditor.readOnlyNoticeWidget = readOnlyNoticeLabel;
+    MacroEditor.copyButtonGroupWidget = copyButtonGroup;
 
     -- Re-apply widget visibility after every layout pass (e.g. window resize), since
     -- AceGUI's List layout unconditionally re-shows every child frame. Wrap rather than
