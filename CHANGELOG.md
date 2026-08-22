@@ -1,6 +1,5 @@
 #### v0.3.1
-- Fix "attempt to compare number with nil" error opening the macro editor on Retail patch 12.1, caused by Blizzard moving MAX_ACCOUNT_MACROS/MAX_CHARACTER_MACROS off the global namespace into Constants.MacroConsts (#12).
-- Fix "attempt to call a nil value" on the same window (#12), from Blizzard removing the global SetDesaturation() wrapper on Retail patch 12.1. Updated the bundled AceGUI-3.0 CheckBox widget to upstream Ace3 r1403, which switches to Texture:SetDesaturated() directly.
+- Fix the macro editor crashing when opened on Retail patch 12.1 (#12).
 
 #### v0.3.0
 - Add Copy to Character and Copy to Account buttons when viewing a read-only macro snapshot, to pull another character's macro into your own collection.
