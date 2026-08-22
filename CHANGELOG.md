@@ -1,3 +1,6 @@
+#### Unreleased
+- Fix "attempt to compare number with nil" error opening the macro editor on Retail patch 12.1, caused by Blizzard moving MAX_ACCOUNT_MACROS/MAX_CHARACTER_MACROS off the global namespace into Constants.MacroConsts (#12).
+
 #### v0.3.0
 - Add Copy to Character and Copy to Account buttons when viewing a read-only macro snapshot, to pull another character's macro into your own collection.
 - Fix the tree/editor divider not being draggable on a fresh window load (needed the window itself moved or resized first), and both panes briefly going blank while dragging it.

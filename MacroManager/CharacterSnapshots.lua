@@ -2,7 +2,7 @@ local _, Private = ...;
 
 -- Contain accessing undefined variables to one place to remove linter warnings.
 local GetMacroInfo, GetNumMacros, UnitFullName, UnitClass = GetMacroInfo, GetNumMacros, UnitFullName, UnitClass;
-local MAX_ACCOUNT_MACROS = MAX_ACCOUNT_MACROS;
+local MAX_ACCOUNT_MACROS = Private.Helpers.MAX_ACCOUNT_MACROS;
 
 local CharacterSnapshots = {};
 

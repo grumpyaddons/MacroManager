@@ -1,4 +1,4 @@
-## Interface: 120007
+## Interface: 120100
 ## Title: MacroManager
 ## Author: Grrumpy <Coldblooded> - Faerlina (US)
 ## Version: @project-version@

@@ -7,7 +7,7 @@ local GameFontNormalSmall = GameFontNormalSmall;
 local LibStub = LibStub;
 local UIParent = UIParent;
 local UnitName, UnitClass, RAID_CLASS_COLORS = UnitName, UnitClass, RAID_CLASS_COLORS;
-local MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS = MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS;
+local MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS = Private.Helpers.MAX_ACCOUNT_MACROS, Private.Helpers.MAX_CHARACTER_MACROS;
 
 if C_AddOns.LoadAddOn then
     LoadAddOn = C_AddOns.LoadAddOn

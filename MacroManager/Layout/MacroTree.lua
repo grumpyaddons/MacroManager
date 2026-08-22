@@ -5,7 +5,7 @@ local GetMacroInfo, GetNumMacros, PickupMacro = GetMacroInfo, GetNumMacros, Pick
 local GetTime, GetCurrentKeyBoardFocus, IsShiftKeyDown = GetTime, GetCurrentKeyBoardFocus, IsShiftKeyDown;
 local LibStub, strsplit = LibStub, strsplit;
 local RAID_CLASS_COLORS = RAID_CLASS_COLORS;
-local MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS = MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS;
+local MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS = Private.Helpers.MAX_ACCOUNT_MACROS, Private.Helpers.MAX_CHARACTER_MACROS;
 
 local AceGUI = LibStub("AceGUI-3.0");
 
