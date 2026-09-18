@@ -1,0 +1,10 @@
+## Interface: 16001
+## Version: v1.7.2
+## Title: MacroManagerData
+## Author: Xinhuan, Ketho
+## Notes: Load on Demand Icon FileData
+## LoadOnDemand: 1
+## IconTexture: Interface\MacroFrame\MacroFrame-Icon
+
+FileDataRetail.lua
+FileDataClassic.lua

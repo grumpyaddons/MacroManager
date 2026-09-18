@@ -1,3 +1,6 @@
+#### v0.3.2
+- Add support for World of Warcraft: Forever.
+
 #### v0.3.1
 - Fix the macro editor crashing when opened on Retail patch 12.1 (#12).
 

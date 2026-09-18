@@ -1,0 +1,29 @@
+## Interface: 16001
+## Title: MacroManager
+## Author: Grrumpy <Coldblooded> - Faerlina (US)
+## Version: @project-version@
+## SavedVariables: MacroManagerSaved
+## X-Curse-Project-ID: 682909
+## X-Wago-ID: WqKQz1Gx
+## IconTexture: Interface\MacroFrame\MacroFrame-Icon
+
+embeds.xml
+
+_init.lua
+
+main.lua
+Helpers.lua
+CharacterSnapshots.lua
+Layout\MacroEditor.lua
+Layout\MacroEditor_ChatEdit_InsertLink.lua
+Layout\MacroTree.lua
+Layout\Window.lua
+Layout\InterfaceOptions.lua
+
+CustomMultiLineEditBox.lua
+CustomTreeGroup.lua
+
+Transmission.lua
+
+Libs\LibAdvancedIconSelector-1.0-LMIS\enUS.lua
+Libs\LibAdvancedIconSelector-1.0-LMIS\LibAdvancedIconSelector-1.0-LMIS.lua
