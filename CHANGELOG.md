@@ -1,3 +1,6 @@
+#### v0.3.3
+- Fix support for World of Warcraft: Forever.
+
 #### v0.3.2
 - Add support for World of Warcraft: Forever.
 
